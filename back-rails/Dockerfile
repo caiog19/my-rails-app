@@ -1,3 +1,5 @@
+# Dockerfile
+
 # syntax=docker/dockerfile:1
 
 # Base para produção
@@ -20,6 +22,12 @@ ENV RAILS_ENV="production" \
 
 # Estágio de build
 FROM base AS build
+
+# Definir argumentos de build para variáveis de ambiente
+ARG CORS_ORIGINS="http://localhost:8080,https://my-rails-app.vercel.app"
+
+# Definir as variáveis de ambiente
+ENV CORS_ORIGINS=${CORS_ORIGINS}
 
 # Instalar pacotes necessários para compilar gems e dependências do Node.js
 RUN apt-get update -qq && \
