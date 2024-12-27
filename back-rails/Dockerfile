@@ -35,6 +35,7 @@ RUN bundle install && \
 # Copiar o código da aplicação
 COPY . .
 
+
 # Ajustar os scripts binários para ambiente Linux
 RUN chmod +x bin/* && \
     sed -i 's/ruby.exe/ruby/' bin/* && \
