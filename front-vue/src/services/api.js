@@ -1,13 +1,18 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://my-rails-app-r7us.onrender.com', 
+  baseURL: process.env.VUE_APP_API_BASE_URL, 
   withCredentials: true,
 });
 
-const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-if (csrfToken) {
-  api.defaults.headers.common['X-CSRF-Token'] = csrfToken;
-}
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token'); 
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`; 
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
 
 export default api;
