@@ -7,9 +7,9 @@ FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
 # Rails app lives aqui
 WORKDIR /rails
 
-# Instalar pacotes base
+# Instalar pacotes base, incluindo libpq5
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libjemalloc2 libvips sqlite3 && \
+    apt-get install --no-install-recommends -y curl libjemalloc2 libvips sqlite3 libpq5 && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Configurar o ambiente de produção
@@ -34,7 +34,6 @@ RUN bundle install && \
 
 # Copiar o código da aplicação
 COPY . .
-
 
 # Ajustar os scripts binários para ambiente Linux
 RUN chmod +x bin/* && \
