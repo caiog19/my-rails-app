@@ -1,5 +1,6 @@
 Rails.application.routes.draw do
   
+  # Rotas para Posts
   resources :posts, only: [:index, :create]
   root "posts#index"
 
@@ -11,5 +12,8 @@ Rails.application.routes.draw do
   get 'login', to: 'sessions#new'
   post 'login', to: 'sessions#create'
   delete 'logout', to: 'sessions#destroy'
+
+  # Rotas para Recuperação de Senha
+  resources :password_resets, only: [:create, :edit, :update]
 
 end
