@@ -1,23 +1,16 @@
 class SessionsController < ApplicationController
-
-  def new
-  end
-
   def create
     user = User.find_by(email: params[:email])
     if user&.authenticate(params[:password])
       session[:user_id] = user.id
-      redirect_to root_path, notice: "Logado com sucesso!"
+      render json: { message: "Login realizado com sucesso!" }, status: :ok
     else
-      flash.now[:alert] = "Email ou senha inválidos"
-      render :new
+      render json: { errors: ["Email ou senha inválidos"] }, status: :unauthorized
     end
   end
 
   def destroy
     session[:user_id] = nil
-    redirect_to login_path, notice: "Deslogado com sucesso!"
+    render json: { message: "Logout realizado com sucesso!" }, status: :ok
   end
 end
-
-

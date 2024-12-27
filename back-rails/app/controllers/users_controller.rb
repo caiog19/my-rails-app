@@ -1,21 +1,20 @@
 class UsersController < ApplicationController
-
-  def new
-    @user = User.new
-  end
-
+  skip_before_action :verify_authenticity_token, only: [:create]
   def create
+    puts "Recebido params: #{params.inspect}"
     @user = User.new(user_params)
     if @user.save
-      redirect_to login_path, notice: "Cadastrado com sucesso!"
+      render json: { message: "Usuário cadastrado com sucesso!" }, status: :created
     else
-      render :new
+      puts "Erros de validação: #{@user.errors.full_messages}"
+      render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
     end
-end
+  end
+
 
   private
-
 
   def user_params
     params.require(:user).permit(:email, :password, :password_confirmation)
   end
+end
