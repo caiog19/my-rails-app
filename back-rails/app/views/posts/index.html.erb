@@ -1,0 +1,36 @@
+<h1>Posts</h1>
+
+<!-- Formulário de busca -->
+<%= form_with url: posts_path, method: :get, local: true do |form| %>
+  <%= form.label :query, "Buscar posts" %>
+  <%= form.text_field :query, placeholder: "Digite sua busca" %>
+  <%= form.submit "Buscar" %>
+<% end %>
+
+<!-- Lista de posts -->
+<% if @posts.any? %>
+  <ul>
+    <% @posts.each do |post| %>
+      <li>
+        <h2><%= post.title %></h2>
+        <p><%= post.content %></p>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p>Nenhum post encontrado.</p>
+<% end %>
+
+<!-- Formulário para criar novo post -->
+<h2>Criar novo post</h2>
+<%= form_with model: Post.new, local: true do |form| %>
+  <div>
+    <%= form.label :title, "Título" %>
+    <%= form.text_field :title %>
+  </div>
+  <div>
+    <%= form.label :content, "Conteúdo" %>
+    <%= form.text_area :content %>
+  </div>
+  <%= form.submit "Postar" %>
+<% end %>
