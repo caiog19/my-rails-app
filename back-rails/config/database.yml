@@ -25,8 +25,16 @@ production:
 
 cable:
   <<: *default
-  database: <%= ENV['CABLE_DB_NAME'] || ENV['DB_NAME'] %>
-  username: <%= ENV['CABLE_DB_USERNAME'] || ENV['DB_USERNAME'] %>
-  password: <%= ENV['CABLE_DB_PASSWORD'] || ENV['DB_PASSWORD'] %>
-  host: <%= ENV['CABLE_DB_HOST'] || ENV['DB_HOST'] %>
-  port: <%= ENV['CABLE_DB_PORT'] || ENV['DB_PORT'] %>
+  database: <%= ENV['DB_NAME'] %>
+  username: <%= ENV['DB_USERNAME'] %>
+  password: <%= ENV['DB_PASSWORD'] %>
+  host: <%= ENV['DB_HOST'] %>
+  port: <%= ENV['DB_PORT'] %>
+
+queue:
+  <<: *default
+  database: <%= ENV['DB_NAME'] %>
+  username: <%= ENV['DB_USERNAME'] %>
+  password: <%= ENV['DB_PASSWORD'] %>
+  host: <%= ENV['DB_HOST'] %>
+  port: <%= ENV['DB_PORT'] %>
