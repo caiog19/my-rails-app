@@ -51,14 +51,24 @@ export default {
     async createPost() {
       try {
         const response = await api.post('/posts', {
-          post: this.newPost,
+          post: {
+            title: this.newPost.title,
+            content: this.newPost.content,
+          },
         });
-        this.posts.push(response.data);
-        this.newPost = { title: '', content: '' }; // Reseta o formulário
+        this.posts.push(response.data); 
+        this.newPost = { title: '', content: '' }; 
       } catch (error) {
-        console.error('Erro ao criar post:', error);
+        if (error.response && error.response.data && error.response.data.errors) {
+          alert('Erro ao criar post: ' + error.response.data.errors.join(', '));
+        } else {
+          alert('Erro ao criar post: algo deu errado.');
+          console.error(error);
+        }
       }
-    },
+    }
+
+
   },
 };
 </script>
