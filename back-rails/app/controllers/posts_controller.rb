@@ -8,6 +8,7 @@ class PostsController < ApplicationController
       else
         @posts = Post.all(created_at: :desc)
       end
+      @posts = @posts.page(params[:page]).per(3)
       render json: @posts 
     end
   
