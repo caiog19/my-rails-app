@@ -14,6 +14,11 @@ Rails.application.routes.draw do
   delete 'logout', to: 'sessions#destroy'
 
   resources :password_resets, only: [:create, :edit, :update], defaults: { format: :json }
+
   get '/favicon.ico', to: ->(_) { [204, {}, []] }
+
+  resources :posts, only: [:index, :create, :update, :destroy]
+
+  get '/meus-posts', to: 'posts#meus_posts'
 
 end
