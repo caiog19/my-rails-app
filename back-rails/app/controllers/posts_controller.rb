@@ -4,13 +4,15 @@ class PostsController < ApplicationController
     # Exibir todos os posts
     def index
       if params[:query].present?
-        @posts = Post.where("title LIKE ? OR content LIKE ?", "%#{params[:query]}%", "%#{params[:query]}%")
+        query = "%#{params[:query]}%"
+        @posts = Post.where("title LIKE :query OR content LIKE :query", query: query)
       else
-        @posts = Post.all(created_at: :desc)
+        @posts = Post.order(created_at: :desc)
       end
       @posts = @posts.page(params[:page]).per(3)
       render json: @posts 
     end
+    
   
     def create
       @post = Post.new(post_params)

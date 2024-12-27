@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1
+# Pré-compilar os assets para produção
+RUN test "$SKIP_ASSETS" = "true" || SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
 # Base para produção
 ARG RUBY_VERSION=3.3.6
