@@ -6,7 +6,7 @@ class PostsController < ApplicationController
       if params[:query].present?
         @posts = Post.where("title LIKE ? OR content LIKE ?", "%#{params[:query]}%", "%#{params[:query]}%")
       else
-        @posts = Post.all
+        @posts = Post.all(created_at: :desc)
       end
       render json: @posts 
     end
