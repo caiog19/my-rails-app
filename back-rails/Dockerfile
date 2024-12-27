@@ -1,6 +1,4 @@
 # syntax=docker/dockerfile:1
-# Pré-compilar os assets para produção
-RUN test "$SKIP_ASSETS" = "true" || SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
 # Base para produção
 ARG RUBY_VERSION=3.3.6
@@ -37,6 +35,8 @@ RUN bundle install && \
 # Copiar o código da aplicação
 COPY . .
 
+# Pré-compilar os assets para produção
+RUN test "$SKIP_ASSETS" = "true" || SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 # Ajustar os scripts binários para ambiente Linux
 RUN chmod +x bin/* && \
     sed -i 's/ruby.exe/ruby/' bin/* && \
