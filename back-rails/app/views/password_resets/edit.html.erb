@@ -1,0 +1,16 @@
+<h1>Redefinir Senha</h1>
+<%= form_with url: password_reset_path(@token), method: :patch do |f| %>
+  <%= hidden_field_tag :token, @token %> <!-- Token incluído no formulário -->
+  
+  <div>
+    <%= f.label :password, "Nova Senha" %>
+    <%= f.password_field :password %>
+  </div>
+  <div>
+    <%= f.label :password_confirmation, "Confirme sua Senha" %>
+    <%= f.password_field :password_confirmation %>
+  </div>
+  <div>
+    <%= f.submit "Atualizar Senha" %>
+  </div>
+<% end %>

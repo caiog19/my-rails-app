@@ -13,7 +13,6 @@ Rails.application.routes.draw do
   post 'login', to: 'sessions#create'
   delete 'logout', to: 'sessions#destroy'
 
-  # Rotas para Recuperação de Senha
-  resources :password_resets, only: [:create, :edit, :update]
+  resources :password_resets, only: [:create, :edit, :update], defaults: { format: :json }
 
 end
