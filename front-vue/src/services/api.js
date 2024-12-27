@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:3000', 
-  withCredentials: true, 
+  baseURL: 'https://my-rails-app-r7us.onrender.com', 
+  withCredentials: true,
 });
 
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
