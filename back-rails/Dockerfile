@@ -21,9 +21,9 @@ ENV RAILS_ENV="production" \
 # Estágio de build para reduzir o tamanho da imagem final
 FROM base AS build
 
-# Instalar pacotes necessários para compilar gems e PostgreSQL
+# Instalar pacotes necessários para compilar gems e dependências do Node.js
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git pkg-config libpq-dev libpq5 && \
+    apt-get install --no-install-recommends -y build-essential git pkg-config libpq-dev nodejs npm && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Instalar gems do projeto
@@ -35,13 +35,13 @@ RUN bundle install && \
 # Copiar o código da aplicação
 COPY . .
 
-# Pré-compilar o código para o bootsnap
-RUN bundle exec bootsnap precompile app/ lib/
-
-# Ajustar binários para serem executáveis no Linux
+# Ajustar os scripts binários para ambiente Linux
 RUN chmod +x bin/* && \
-    sed -i "s/\r$//g" bin/* && \
-    sed -i 's/ruby\.exe$/ruby/' bin/*
+    sed -i 's/ruby.exe/ruby/' bin/* && \
+    sed -i "s/\r$//g" bin/*
+
+# Instalar dependências do Vite
+RUN npm install --prefix ./ && npm run build --prefix ./
 
 # Pré-compilar os assets para produção
 RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
