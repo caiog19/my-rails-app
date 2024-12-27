@@ -1,5 +1,5 @@
 class PostsController < ApplicationController
-    skip_before_action :verify_authenticity_token, only: [:create]
+    before_action :authorize_request, only: [:create]
 
     # Exibir todos os posts
     def index
@@ -13,6 +13,7 @@ class PostsController < ApplicationController
   
     def create
       @post = Post.new(post_params)
+      @post.user_id = @current_user.id
       if @post.save
         render json: @post, status: :created 
       else

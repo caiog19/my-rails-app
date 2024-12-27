@@ -1,16 +1,14 @@
 class UsersController < ApplicationController
-  skip_before_action :verify_authenticity_token, only: [:create]
+  skip_before_action :authorize_request, only: [:create]
   def create
-    puts "Recebido params: #{params.inspect}"
     @user = User.new(user_params)
     if @user.save
-      render json: { message: "Usuário cadastrado com sucesso!" }, status: :created
+      token = JsonWebToken.encode({ user_id: @user.id }) 
+      render json: { token: token, message: "Usuário cadastrado com sucesso!" }, status: :created
     else
-      puts "Erros de validação: #{@user.errors.full_messages}"
       render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
     end
   end
-
 
   private
 
