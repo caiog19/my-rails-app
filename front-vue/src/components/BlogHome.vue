@@ -9,6 +9,14 @@
         <p><small>Publicado por: {{ post.user_full_name }}</small></p>
         <p>{{ post.content }}</p>
 
+      <!-- Exibição de tags -->
+      <div v-if="post.tags && post.tags.length">
+        <p><strong>Tags:</strong></p>
+        <ul>
+          <li v-for="tag in post.tags" :key="tag.id">{{ tag.name }}</li>
+        </ul>
+      </div>
+
         <!-- Botões de edição e exclusão -->
 
         <div v-if="currentUser && post.user_id === currentUser.id">

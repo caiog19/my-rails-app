@@ -6,21 +6,29 @@
     <button @click="logout" class="logout-button">Logout</button>
 
     <!-- Formulário para criar ou editar posts -->
-    <div class="post-form">
-      <h3>{{ isEditingPost ? 'Editar Post' : 'Criar Novo Post' }}</h3>
-      <form @submit.prevent="isEditingPost ? updatePost() : submitPost()">
-        <div>
-          <label for="title">Título:</label>
-          <input v-model="post.title" id="title" type="text" required />
-        </div>
-        <div>
-          <label for="content">Conteúdo:</label>
-          <textarea v-model="post.content" id="content" required></textarea>
-        </div>
-        <button type="submit">{{ isEditingPost ? 'Salvar Alterações' : 'Publicar Post' }}</button>
-        <button type="button" v-if="isEditingPost" @click="cancelEditPost" class="cancel-button">Cancelar</button>
-      </form>
+<!-- Formulário para criar ou editar posts -->
+<div class="post-form">
+  <h3>{{ isEditingPost ? 'Editar Post' : 'Criar Novo Post' }}</h3>
+  <form @submit.prevent="isEditingPost ? updatePost() : submitPost()">
+    <div>
+      <label for="title">Título:</label>
+      <input v-model="post.title" id="title" type="text" required />
     </div>
+    <div>
+      <label for="content">Conteúdo:</label>
+      <textarea v-model="post.content" id="content" required></textarea>
+    </div>
+    <div>
+      <label for="tags">Tags:</label>
+      <select id="tags" v-model="post.tag_ids" multiple>
+        <option v-for="tag in tags" :key="tag.id" :value="tag.id">{{ tag.name }}</option>
+      </select>
+    </div>
+    <button type="submit">{{ isEditingPost ? 'Salvar Alterações' : 'Publicar Post' }}</button>
+    <button type="button" v-if="isEditingPost" @click="cancelEditPost" class="cancel-button">Cancelar</button>
+  </form>
+</div>
+
 
     <!-- Lista de usuários para administradores -->
     <div v-if="isAdmin" class="admin-section">
@@ -134,10 +142,12 @@ export default {
     return {
       posts: [],
       users: [],
+      tags: [],
       post: {
         id: null,
         title: '',
         content: '',
+        tag_ids: [],
       },
       profile: {
         full_name: '',
@@ -162,14 +172,24 @@ export default {
     };
   },
   async created() {
-    await this.fetchCurrentUser();
-    this.loadProfile(); 
-    await this.fetchPosts();
-    if (this.isAdmin) {
-      await this.fetchUsers();
+  await this.fetchCurrentUser();
+  await this.fetchTags(); 
+  await this.fetchPosts();
+  if (this.isAdmin) {
+    await this.fetchUsers();
+  }
+},
+  methods: {
+    async fetchTags() {
+    try {
+      const response = await api.get('/tags', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      this.tags = response.data;
+    } catch (error) {
+      console.error('Erro ao buscar tags:', error);
     }
   },
-  methods: {
     loadProfile() {
       this.profile.full_name = this.currentUser.full_name || '';
       this.profile.email = this.currentUser.email || '';
@@ -336,6 +356,7 @@ export default {
         id: null,
         title: '',
         content: '',
+        tag_ids: [],
       };
       this.isEditingPost = false;
     },
