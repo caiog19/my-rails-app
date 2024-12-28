@@ -15,4 +15,8 @@ class ApplicationController < ActionController::API
       render json: { errors: "Usuário não encontrado" }, status: :unauthorized
     end
   end
+
+  def authorize_admin
+    render json: { errors: "Acesso negado" }, status: :forbidden unless @current_user&.admin?
+  end
 end
