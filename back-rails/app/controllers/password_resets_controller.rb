@@ -27,11 +27,10 @@ class PasswordResetsController < ApplicationController
     if user.nil? || user.reset_password_sent_at.nil? || user.reset_password_sent_at <= 2.hours.ago
       render json: { errors: ["Token inválido ou expirado"] }, status: :unprocessable_entity
     else
-      @token = params[:id] 
-  
-      render :edit, formats: [:html]
+      render json: { message: "Token válido", token: params[:id] }, status: :ok
     end
   end
+  
   
   def update
     user = User.find_by(reset_password_token: params[:token].to_s.strip)
@@ -41,11 +40,13 @@ class PasswordResetsController < ApplicationController
     end
   
     if user.update(password_params)
+      user.update(reset_password_token: nil) 
       render json: { message: "Senha atualizada com sucesso!" }, status: :ok
     else
       render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
     end
   end
+  
   
 
   private
