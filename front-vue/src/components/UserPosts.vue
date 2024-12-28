@@ -7,8 +7,8 @@
 
     <!-- Formulário para criar ou editar posts -->
     <div class="post-form">
-      <h3>{{ isEditing ? 'Editar Post' : 'Criar Novo Post' }}</h3>
-      <form @submit.prevent="isEditing ? updatePost() : submitPost()">
+      <h3>{{ isEditingPost ? 'Editar Post' : 'Criar Novo Post' }}</h3>
+      <form @submit.prevent="isEditingPost ? updatePost() : submitPost()">
         <div>
           <label for="title">Título:</label>
           <input v-model="post.title" id="title" type="text" required />
@@ -17,8 +17,8 @@
           <label for="content">Conteúdo:</label>
           <textarea v-model="post.content" id="content" required></textarea>
         </div>
-        <button type="submit">{{ isEditing ? 'Salvar Alterações' : 'Publicar Post' }}</button>
-        <button type="button" v-if="isEditing" @click="cancelEdit" class="cancel-button">Cancelar</button>
+        <button type="submit">{{ isEditingPost ? 'Salvar Alterações' : 'Publicar Post' }}</button>
+        <button type="button" v-if="isEditingPost" @click="cancelEditPost" class="cancel-button">Cancelar</button>
       </form>
     </div>
 
@@ -33,10 +33,11 @@
       </ul>
       <p v-else>Não há usuários cadastrados.</p>
 
-      <!-- Controles de paginação -->
-      <div v-if="users && users.length">
-        <button @click="fetchUsers(currentPage - 1)" :disabled="currentPage === 1">Anterior</button>
-        <button @click="fetchUsers(currentPage + 1)" :disabled="currentPage === totalPages">Próximo</button>
+      <!-- Controles de paginação para usuários -->
+      <div v-if="users && users.length" class="pagination">
+        <button @click="fetchUsers(currentPageUsers - 1)" :disabled="currentPageUsers === 1">Anterior</button>
+        <span>Página {{ currentPageUsers }} de {{ totalPagesUsers }}</span>
+        <button @click="fetchUsers(currentPageUsers + 1)" :disabled="currentPageUsers === totalPagesUsers">Próximo</button>
       </div>
     </div>
 
@@ -64,40 +65,150 @@
       </li>
     </ul>
     <p v-else>Você ainda não publicou nenhum post.</p>
+
+    <!-- Controles de paginação para posts -->
+    <div v-if="posts && posts.length" class="pagination">
+      <button @click="fetchPosts(currentPagePosts - 1)" :disabled="currentPagePosts === 1">Anterior</button>
+      <span>Página {{ currentPagePosts }} de {{ totalPagesPosts }}</span>
+      <button @click="fetchPosts(currentPagePosts + 1)" :disabled="currentPagePosts === totalPagesPosts">Próximo</button>
+    </div>
+
+    <div v-if="loading" class="loading-indicator">Carregando...</div>
+
+    <!-- Formulário para editar o cadastro -->
+    <div class="edit-profile-form">
+      <h3>Editar Cadastro</h3>
+      
+      <!-- Nome Completo -->
+      <EditableField
+        ref="editableFullName"
+        label="Nome Completo"
+        id="fullName"
+        :value="profile.full_name"
+        field="full_name"
+        type="text"
+        required
+        @save="handleSave"
+      />
+
+      <!-- Email -->
+      <EditableField
+        ref="editableEmail"
+        label="Email"
+        id="email"
+        :value="profile.email"
+        field="email"
+        type="email"
+        required
+        @save="handleSave"
+      />
+
+      <!-- Senha -->
+      <EditableField
+        ref="editablePassword"
+        label="Nova Senha"
+        id="password"
+        :value="passwordPlaceholder"
+        field="password"
+        type="password"
+        placeholder="Nova Senha"
+        required
+        @save="handleSave"
+      />
+    </div>
   </div>
 </template>
 
 <script>
 import api from '../services/api';
 import { eventBus } from '../eventBus';
+import './BlogComponents.css';
+import EditableField from './EditableField.vue'; // Importa o componente auxiliar
 
 export default {
   name: 'UserPosts',
+  components: {
+    EditableField,
+  },
   data() {
     return {
-      posts: [], 
-      users: [], 
+      posts: [],
+      users: [],
       post: {
         id: null,
         title: '',
         content: '',
       },
-      currentUser: {}, 
-      isEditing: false, 
-      currentPage: 1, 
-      totalPages: 1, 
-      isAdmin: false, 
-      loading: false, 
+      profile: {
+        full_name: '',
+        email: '',
+        password: '',
+        password_confirmation: '',
+      },
+      currentUser: {},
+      isEditingPost: false,
+      currentPageUsers: 1,
+      totalPagesUsers: 1,
+      currentPagePosts: 1,
+      totalPagesPosts: 1,
+      isAdmin: false,
+      loading: false,
+      formErrors: {
+        full_name: [],
+        email: [],
+        password: [],
+      },
+      passwordPlaceholder: '********', // Para esconder a senha no frontend
     };
   },
   async created() {
-    await this.fetchCurrentUser(); 
-    await this.fetchPosts(); 
+    await this.fetchCurrentUser();
+    this.loadProfile(); 
+    await this.fetchPosts();
     if (this.isAdmin) {
-      await this.fetchUsers(); 
+      await this.fetchUsers();
     }
   },
   methods: {
+    loadProfile() {
+      this.profile.full_name = this.currentUser.full_name || '';
+      this.profile.email = this.currentUser.email || '';
+    },
+    // Método para lidar com a atualização de campos individuais
+    async handleSave(payload) {
+      try {
+        await api.put('/auth/update-profile', payload, { // Enviar o payload completo com a chave 'user'
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+        alert('Perfil atualizado com sucesso!');
+        await this.fetchCurrentUser();
+        this.loadProfile();
+
+        // Determinar qual campo foi atualizado para fechar o campo de edição correspondente
+        const updatedField = Object.keys(payload.user)[0];
+        // Mapeamento de campos para refs
+        const fieldRefMap = {
+          full_name: 'editableFullName',
+          email: 'editableEmail',
+          password: 'editablePassword',
+        };
+        const refName = fieldRefMap[updatedField];
+        if (refName && this.$refs[refName]) {
+          this.$refs[refName].closeEditing();
+        }
+      } catch (error) {
+        console.error(`Erro ao atualizar campo:`, error);
+        if (error.response && error.response.data && error.response.data.errors) {
+          // Exibe erros específicos no frontend
+          alert(`Erro(s) ao atualizar campo:\n${error.response.data.errors.join('\n')}`);
+        } else {
+          alert('Não foi possível atualizar campo.');
+        }
+      }
+    },
+    // Métodos de gerenciamento de posts
     async fetchCurrentUser() {
       const token = localStorage.getItem('token');
       try {
@@ -113,14 +224,17 @@ export default {
       }
     },
     async fetchUsers(page = 1) {
+      this.loading = true;
       try {
         const response = await api.get('/users', { params: { page } });
         this.users = response.data.users || [];
-        this.currentPage = response.data.meta.current_page || 1;
-        this.totalPages = response.data.meta.total_pages || 1;
+        this.currentPageUsers = response.data.meta.current_page || 1;
+        this.totalPagesUsers = response.data.meta.total_pages || 1;
       } catch (error) {
         console.error('Erro ao buscar usuários:', error);
         this.users = [];
+      } finally {
+        this.loading = false;
       }
     },
     async fetchPosts(page = 1) {
@@ -128,8 +242,8 @@ export default {
       try {
         const response = await api.get('/meus-posts', { params: { page } });
         this.posts = response.data.posts || [];
-        this.currentPage = response.data.meta.current_page || 1;
-        this.totalPages = response.data.meta.total_pages || 1;
+        this.currentPagePosts = response.data.meta.current_page || 1;
+        this.totalPagesPosts = response.data.meta.total_pages || 1;
       } catch (error) {
         console.error('Erro ao buscar posts:', error);
         this.posts = [];
@@ -140,8 +254,14 @@ export default {
     async deleteUser(userId) {
       if (!confirm('Tem certeza de que deseja excluir este usuário?')) return;
       try {
-        await api.delete(`/users/${userId}`);
-        this.users = this.users.filter((user) => user.id !== userId);
+        const token = localStorage.getItem('token');
+        await api.delete(`/users/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (this.users.length === 1 && this.currentPageUsers > 1) {
+          this.currentPageUsers--;
+        }
+        await this.fetchUsers(this.currentPageUsers);
         alert('Usuário excluído com sucesso!');
       } catch (error) {
         console.error('Erro ao excluir usuário:', error);
@@ -151,20 +271,27 @@ export default {
     async deletePost(postId) {
       if (!confirm('Tem certeza de que deseja excluir este post?')) return;
       try {
-        await api.delete(`/posts/${postId}`);
-        this.posts = this.posts.filter((post) => post.id !== postId);
+        const token = localStorage.getItem('token');
+        await api.delete(`/posts/${postId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (this.posts.length === 1 && this.currentPagePosts > 1) {
+          this.currentPagePosts--;
+        }
+        await this.fetchPosts(this.currentPagePosts);
         alert('Post excluído com sucesso!');
       } catch (error) {
         console.error('Erro ao excluir post:', error);
         alert('Não foi possível excluir o post.');
       }
     },
+
     editPost(post) {
       this.post = { ...post };
-      this.isEditing = true;
+      this.isEditingPost = true;
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
-    cancelEdit() {
+    cancelEditPost() {
       this.resetForm();
     },
     async updatePost() {
@@ -178,9 +305,9 @@ export default {
           headers: { Authorization: `Bearer ${token}` },
         });
         alert('Post atualizado com sucesso!');
-        this.isEditing = false;
+        this.isEditingPost = false;
         this.resetForm();
-        await this.fetchPosts(this.currentPage);
+        await this.fetchPosts(this.currentPagePosts);
       } catch (error) {
         console.error('Erro ao atualizar post:', error);
         alert('Não foi possível atualizar o post.');
@@ -198,7 +325,7 @@ export default {
         });
         alert('Post publicado com sucesso!');
         this.resetForm();
-        await this.fetchPosts(this.currentPage);
+        await this.fetchPosts(this.currentPagePosts);
       } catch (error) {
         console.error('Erro ao salvar o post:', error);
         alert('Não foi possível salvar o post. Verifique os dados e tente novamente.');
@@ -210,12 +337,13 @@ export default {
         title: '',
         content: '',
       };
-      this.isEditing = false;
+      this.isEditingPost = false;
     },
     logout() {
       localStorage.removeItem('token');
       eventBus.updateAuthentication(false);
       this.posts = [];
+      this.users = [];
       this.resetForm();
       this.$router.push('/login');
       alert('Você foi deslogado com sucesso.');
@@ -224,130 +352,3 @@ export default {
 };
 </script>
 
-<style scoped>
-.logout-button {
-  background-color: #f44336; 
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  cursor: pointer;
-  float: right;
-  margin-bottom: 20px;
-  border-radius: 4px;
-}
-
-.logout-button:hover {
-  background-color: #d32f2f;
-}
-
-.post-form {
-  border: 1px solid #ccc;
-  padding: 20px;
-  margin-bottom: 30px;
-  border-radius: 4px;
-  background-color: #f9f9f9;
-}
-
-.post-form h3 {
-  margin-top: 0;
-}
-
-.post-form form div {
-  margin-bottom: 15px;
-}
-
-.post-form label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-}
-
-.post-form input[type="text"],
-.post-form textarea {
-  width: 100%;
-  padding: 8px;
-  box-sizing: border-box;
-}
-
-.post-form button {
-  padding: 10px 15px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.post-form button[type="submit"] {
-  background-color: #4caf50; 
-  color: white;
-}
-
-.post-form button[type="submit"]:hover {
-  background-color: #45a049;
-}
-
-.cancel-button {
-  background-color: #9e9e9e; 
-  color: white;
-  margin-left: 10px;
-}
-
-.cancel-button:hover {
-  background-color: #7e7e7e;
-}
-
-.post-actions {
-  margin-top: 10px;
-}
-
-.edit-button {
-  background-color: #2196f3; 
-  color: white;
-  padding: 5px 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-right: 10px;
-}
-
-.edit-button:hover {
-  background-color: #1976d2;
-}
-
-.delete-button {
-  background-color: #f44336; 
-  color: white;
-  padding: 5px 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.delete-button:hover {
-  background-color: #d32f2f;
-}
-
-.loading-indicator {
-  text-align: center;
-  color: #888;
-  margin-top: 20px;
-}
-
-.admin-section button {
-  margin: 5px;
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  background-color: #f9f9f9;
-  cursor: pointer;
-}
-
-.admin-section button:hover {
-  background-color: #e9e9e9;
-}
-
-.admin-section button:disabled {
-  background-color: #f1f1f1;
-  color: #aaa;
-  cursor: not-allowed;
-}
-
-</style>
