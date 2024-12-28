@@ -3,18 +3,22 @@ import BlogHome from './components/BlogHome.vue';
 import UserLogin from './components/UserLogin.vue';
 import UserRegister from './components/UserRegister.vue';
 import UserPosts from './components/UserPosts.vue';
+import PasswordResetRequest from './components/PasswordResetRequest.vue';
+import PasswordReset from './components/PassWordReset.vue';
+
 const routes = [
   { path: '/', component: BlogHome },
-  { path: '/login', component: UserLogin, name: 'Login' },
+  { path: '/login', component: UserLogin },
   { path: '/register', component: UserRegister },
   {
     path: '/meus-posts',
     name: 'UserPosts',
     component: UserPosts,
-    meta: { requiresAuth: true }, 
+    meta: { requiresAuth: true },
   },
+  { path: '/esqueci-minha-senha', component: PasswordResetRequest },
+  { path: '/password_resets/:token', component: PasswordReset }, // Rota para redefinir a senha
 ];
-
 
 const router = createRouter({
   history: createWebHistory(),
@@ -23,17 +27,12 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token');
-  console.log(`Tentando acessar: ${to.path}`);
-  console.log(`Token presente: ${!!token}`);
-
   if (to.meta.requiresAuth && !token) {
     alert('Você precisa estar logado para acessar esta página.');
-    next({ name: 'Login' }); // Certifique-se de que a rota 'Login' está nomeada
+    next({ name: 'Login' });
   } else {
-    next(); 
+    next();
   }
 });
-
-
 
 export default router;
