@@ -23,8 +23,11 @@ Rails.application.routes.draw do
 
   resources :users, only: [:index, :destroy]
 
-
   get '/auth/me', to: 'auth#me'
   resources :posts, only: [:index, :create, :update, :destroy]
   resources :users, only: [:index, :destroy]
+
+
+  root to: redirect('https://my-rails-app.vercel.app')
+
 end
