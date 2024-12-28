@@ -85,12 +85,24 @@ export default {
       try {
         await api.delete(`/posts/${postId}`);
         this.posts = this.posts.filter((post) => post.id !== postId);
+
+        if (this.posts.length === 0 && this.currentPage < this.totalPages) {
+          await this.fetchPosts(this.currentPage + 1); 
+          this.currentPage++; 
+        } else if (this.posts.length === 0 && this.currentPage > 1) {
+          await this.fetchPosts(this.currentPage - 1); 
+          this.currentPage--; 
+        } else {
+          await this.fetchPosts(this.currentPage);
+        }
+
         alert('Post excluído com sucesso!');
       } catch (error) {
         console.error('Erro ao excluir post:', error);
         alert('Não foi possível excluir o post.');
       }
     },
+
     editPost(post) {
       this.post = { ...post };
       this.isEditing = true;
