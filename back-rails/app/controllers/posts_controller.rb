@@ -2,7 +2,7 @@ class PostsController < ApplicationController
   before_action :authorize_request, except: [:index]
   before_action :set_post, only: [:update, :destroy]
 
-  # Exibir todos os posts
+  # Exibir todos os posts (Home)
   def index
     if params[:query].present?
       query = "%#{params[:query]}%"
@@ -11,7 +11,28 @@ class PostsController < ApplicationController
       @posts = Post.order(created_at: :desc)
     end
     @posts = @posts.page(params[:page]).per(3)
-    render json: @posts
+    render json: {
+      posts: @posts,
+      meta: {
+        current_page: @posts.current_page,
+        total_pages: @posts.total_pages,
+        total_count: @posts.total_count
+      }
+    }
+  end
+
+  # Meus Posts (do usuário autenticado)
+  def meus_posts
+    @posts = Post.where(user_id: @current_user.id).order(created_at: :desc)
+    @posts = @posts.page(params[:page]).per(3)
+    render json: {
+      posts: @posts,
+      meta: {
+        current_page: @posts.current_page,
+        total_pages: @posts.total_pages,
+        total_count: @posts.total_count
+      }
+    }
   end
 
   # Criar um novo post
@@ -46,11 +67,6 @@ class PostsController < ApplicationController
     else
       render json: { error: 'Você não tem permissão para excluir este post' }, status: :forbidden
     end
-  end
-
-  def meus_posts
-    @posts = Post.where(user_id: @current_user.id).order(created_at: :desc)
-    render json: @posts, status: :ok
   end
 
   private
