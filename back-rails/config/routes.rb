@@ -21,4 +21,10 @@ Rails.application.routes.draw do
 
   get '/meus-posts', to: 'posts#meus_posts'
 
+  resources :users, only: [:index, :destroy]
+
+
+  get '/auth/me', to: 'auth#me'
+  resources :posts, only: [:index, :create, :update, :destroy]
+  resources :users, only: [:index, :destroy]
 end
