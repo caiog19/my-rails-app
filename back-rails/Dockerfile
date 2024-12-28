@@ -70,5 +70,5 @@ USER 1000:1000
 # Expor porta 3000
 EXPOSE 3000
 
-# Comando padrão para iniciar o servidor
-CMD ["./bin/rails", "server", "-b", "0.0.0.0"]
+# Comando padrão para executar migrações e iniciar o servidor
+CMD ["sh", "-c", "bin/rails db:migrate && bin/rails server -b 0.0.0.0"]
