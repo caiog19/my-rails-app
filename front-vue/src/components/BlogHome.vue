@@ -10,10 +10,14 @@
         <p>{{ post.content }}</p>
 
         <!-- Botões de edição e exclusão -->
-        <div v-if="isAdmin || (currentUser && post.user_id === currentUser.id)">
+
+        <div v-if="currentUser && post.user_id === currentUser.id">
           <button @click="startEditPost(post)" class="edit-button">Editar</button>
+        </div>
+        <div v-if="isAdmin || (currentUser && post.user_id === currentUser.id)">
           <button @click="deletePost(post.id)" class="delete-button">Excluir</button>
         </div>
+
 
         <!-- Formulário de edição específico para o post -->
         <div v-if="isEditing && editingPostId === post.id" class="post-form">
@@ -21,17 +25,16 @@
           <form @submit.prevent="updatePost">
             <div>
               <label for="title">Título:</label>
-              <input v-model="post.title" id="title" type="text" required />
+              <input v-model="editingPost.title" id="title" type="text" required />
             </div>
             <div>
               <label for="content">Conteúdo:</label>
-              <textarea v-model="post.content" id="content" required></textarea>
+              <textarea v-model="editingPost.content" id="content" required></textarea>
             </div>
             <button type="submit">Salvar Alterações</button>
             <button type="button" @click="cancelEdit" class="cancel-button">Cancelar</button>
           </form>
         </div>
-
         <!-- Comentários -->
         <div class="comments-section">
           <h4>Comentários</h4>
@@ -82,6 +85,7 @@ export default {
       isAdmin: false,
       isEditing: false,
       editingPostId: null,
+      editingPost: {},
       newComments: {}, 
     };
   },
@@ -162,37 +166,39 @@ export default {
       }
     },
     startEditPost(post) {
-      this.isEditing = true;
-      this.editingPostId = post.id;
-      this.$set(this, 'editingPost', { ...post });
-    },
-    async updatePost() {
-      try {
-        const token = localStorage.getItem('token');
-        const postToUpdate = this.posts.find(post => post.id === this.editingPostId);
+  if (post.user_id !== this.currentUser.id) {
+    alert('Você só pode editar seus próprios posts.');
+    return;
+  }
+  this.isEditing = true;
+  this.editingPostId = post.id;
+  this.editingPost = { ...post }; // Cópia do post a ser editado
+},
 
-        if (!postToUpdate) {
-          alert('Post não encontrado para edição.');
-          return;
-        }
+  async updatePost() {
+  try {
+    const token = localStorage.getItem('token');
+    await api.put(`/posts/${this.editingPostId}`, this.editingPost, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-        await api.put(`/posts/${postToUpdate.id}`, postToUpdate, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+    alert('Post atualizado com sucesso!');
+    this.isEditing = false;
+    this.editingPostId = null;
+    this.editingPost = {}; 
+    await this.fetchPosts(this.currentPage);
+  } catch (error) {
+    console.error('Erro ao atualizar post:', error);
+    alert('Não foi possível atualizar o post.');
+  }
+},
 
-        alert('Post atualizado com sucesso!');
-        this.isEditing = false;
-        this.editingPostId = null;
-        await this.fetchPosts(this.currentPage);
-      } catch (error) {
-        console.error('Erro ao atualizar post:', error);
-        alert('Não foi possível atualizar o post.');
-      }
-    },
-    cancelEdit() {
-      this.isEditing = false;
-      this.editingPostId = null;
-    },
+  cancelEdit() {
+    this.isEditing = false;
+    this.editingPostId = null;
+    this.editingPost = {};
+  },
+
     async deletePost(postId) {
       if (!confirm('Tem certeza de que deseja excluir este post?')) return;
       try {

@@ -7,8 +7,8 @@
 
     <!-- Formulário para criar ou editar posts -->
     <div class="post-form">
-      <h3>{{ isEditing ? 'Editar Post' : 'Criar Novo Post' }}</h3>
-      <form @submit.prevent="isEditing ? updatePost() : submitPost()">
+      <h3>{{ isEditingPost ? 'Editar Post' : 'Criar Novo Post' }}</h3>
+      <form @submit.prevent="isEditingPost ? updatePost() : submitPost()">
         <div>
           <label for="title">Título:</label>
           <input v-model="post.title" id="title" type="text" required />
@@ -17,8 +17,8 @@
           <label for="content">Conteúdo:</label>
           <textarea v-model="post.content" id="content" required></textarea>
         </div>
-        <button type="submit">{{ isEditing ? 'Salvar Alterações' : 'Publicar Post' }}</button>
-        <button type="button" v-if="isEditing" @click="cancelEdit" class="cancel-button">Cancelar</button>
+        <button type="submit">{{ isEditingPost ? 'Salvar Alterações' : 'Publicar Post' }}</button>
+        <button type="button" v-if="isEditingPost" @click="cancelEditPost" class="cancel-button">Cancelar</button>
       </form>
     </div>
 
@@ -74,102 +74,141 @@
     </div>
 
     <div v-if="loading" class="loading-indicator">Carregando...</div>
+
+    <!-- Formulário para editar o cadastro -->
+    <div class="edit-profile-form">
+      <h3>Editar Cadastro</h3>
+      
+      <!-- Nome Completo -->
+      <EditableField
+        ref="editableFullName"
+        label="Nome Completo"
+        id="fullName"
+        :value="profile.full_name"
+        field="full_name"
+        type="text"
+        required
+        @save="handleSave"
+      />
+
+      <!-- Email -->
+      <EditableField
+        ref="editableEmail"
+        label="Email"
+        id="email"
+        :value="profile.email"
+        field="email"
+        type="email"
+        required
+        @save="handleSave"
+      />
+
+      <!-- Senha -->
+      <EditableField
+        ref="editablePassword"
+        label="Nova Senha"
+        id="password"
+        :value="passwordPlaceholder"
+        field="password"
+        type="password"
+        placeholder="Nova Senha"
+        required
+        @save="handleSave"
+      />
+    </div>
   </div>
-
-  <!-- Formulário para editar o cadastro -->
-<div class="edit-profile-form">
-  <h3>Editar Cadastro</h3>
-  <form @submit.prevent="updateProfile">
-    <div>
-      <label for="fullName">Nome Completo:</label>
-      <input v-model="profile.full_name" id="fullName" type="text" required />
-    </div>
-    <div>
-      <label for="email">Email:</label>
-      <input v-model="profile.email" id="email" type="email" required />
-    </div>
-    <div>
-      <label for="password">Nova Senha:</label>
-      <input v-model="profile.password" id="password" type="password" />
-    </div>
-    <div>
-      <label for="passwordConfirmation">Confirme a Nova Senha:</label>
-      <input v-model="profile.password_confirmation" id="passwordConfirmation" type="password" />
-    </div>
-    <button type="submit">Salvar Alterações</button>
-  </form>
-</div>
-
 </template>
 
 <script>
 import api from '../services/api';
 import { eventBus } from '../eventBus';
 import './BlogComponents.css';
+import EditableField from './EditableField.vue'; // Importa o componente auxiliar
 
 export default {
   name: 'UserPosts',
+  components: {
+    EditableField,
+  },
   data() {
-  return {
-    posts: [],
-    users: [],
-    post: {
-      id: null,
-      title: '',
-      content: '',
-    },
-    profile: {
-      full_name: '',
-      email: '',
-      password: '',
-      password_confirmation: '',
-    },
-    currentUser: {},
-    isEditing: false,
-    currentPageUsers: 1,
-    totalPagesUsers: 1,
-    currentPagePosts: 1,
-    totalPagesPosts: 1,
-    isAdmin: false,
-    loading: false,
-  };
-},
-async created() {
-  await this.fetchCurrentUser();
-  this.loadProfile(); 
-  await this.fetchPosts();
-  if (this.isAdmin) {
-    await this.fetchUsers();
-  }
-},
+    return {
+      posts: [],
+      users: [],
+      post: {
+        id: null,
+        title: '',
+        content: '',
+      },
+      profile: {
+        full_name: '',
+        email: '',
+        password: '',
+        password_confirmation: '',
+      },
+      currentUser: {},
+      isEditingPost: false,
+      currentPageUsers: 1,
+      totalPagesUsers: 1,
+      currentPagePosts: 1,
+      totalPagesPosts: 1,
+      isAdmin: false,
+      loading: false,
+      formErrors: {
+        full_name: [],
+        email: [],
+        password: [],
+      },
+      passwordPlaceholder: '********', // Para esconder a senha no frontend
+    };
+  },
+  async created() {
+    await this.fetchCurrentUser();
+    this.loadProfile(); 
+    await this.fetchPosts();
+    if (this.isAdmin) {
+      await this.fetchUsers();
+    }
+  },
   methods: {
     loadProfile() {
-    this.profile.full_name = this.currentUser.full_name || '';
-    this.profile.email = this.currentUser.email || '';
-  },
-  async updateProfile() {
-  try {
-    await api.put('/auth/update-profile', {
-      user: {
-        full_name: this.profile.full_name,
-        email: this.profile.email,
-        password: this.profile.password,
-        password_confirmation: this.profile.password_confirmation,
-      },
-    }, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-    alert('Perfil atualizado com sucesso!');
-    // Optionally, reload the current user data
-    await this.fetchCurrentUser();
-  } catch (error) {
-    console.error('Erro ao atualizar o perfil:', error);
-    alert('Não foi possível atualizar o perfil.');
-  }
-},
+      this.profile.full_name = this.currentUser.full_name || '';
+      this.profile.email = this.currentUser.email || '';
+    },
+    // Método para lidar com a atualização de campos individuais
+    async handleSave(payload) {
+      try {
+        await api.put('/auth/update-profile', payload, { // Enviar o payload completo com a chave 'user'
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+        alert('Perfil atualizado com sucesso!');
+        await this.fetchCurrentUser();
+        this.loadProfile();
 
+        // Determinar qual campo foi atualizado para fechar o campo de edição correspondente
+        const updatedField = Object.keys(payload.user)[0];
+        // Mapeamento de campos para refs
+        const fieldRefMap = {
+          full_name: 'editableFullName',
+          email: 'editableEmail',
+          password: 'editablePassword',
+        };
+        const refName = fieldRefMap[updatedField];
+        if (refName && this.$refs[refName]) {
+          this.$refs[refName].closeEditing();
+        }
+      } catch (error) {
+        console.error(`Erro ao atualizar campo:`, error);
+        if (error.response && error.response.data && error.response.data.errors) {
+          // Exibe erros específicos no frontend
+          alert(`Erro(s) ao atualizar campo:\n${error.response.data.errors.join('\n')}`);
+        } else {
+          alert('Não foi possível atualizar campo.');
+        }
+      }
+    },
+    // Métodos de gerenciamento de posts
     async fetchCurrentUser() {
       const token = localStorage.getItem('token');
       try {
@@ -219,11 +258,10 @@ async created() {
         await api.delete(`/users/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (this.users.length === 1 && this.currentPage > 1) {
-          this.currentPage--;
+        if (this.users.length === 1 && this.currentPageUsers > 1) {
+          this.currentPageUsers--;
         }
-        await this.fetchUsers(this.currentPage);
-
+        await this.fetchUsers(this.currentPageUsers);
         alert('Usuário excluído com sucesso!');
       } catch (error) {
         console.error('Erro ao excluir usuário:', error);
@@ -237,11 +275,10 @@ async created() {
         await api.delete(`/posts/${postId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (this.posts.length === 1 && this.currentPage > 1) {
-          this.currentPage--;
+        if (this.posts.length === 1 && this.currentPagePosts > 1) {
+          this.currentPagePosts--;
         }
-        await this.fetchPosts(this.currentPage);
-
+        await this.fetchPosts(this.currentPagePosts);
         alert('Post excluído com sucesso!');
       } catch (error) {
         console.error('Erro ao excluir post:', error);
@@ -251,10 +288,10 @@ async created() {
 
     editPost(post) {
       this.post = { ...post };
-      this.isEditing = true;
+      this.isEditingPost = true;
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
-    cancelEdit() {
+    cancelEditPost() {
       this.resetForm();
     },
     async updatePost() {
@@ -268,7 +305,7 @@ async created() {
           headers: { Authorization: `Bearer ${token}` },
         });
         alert('Post atualizado com sucesso!');
-        this.isEditing = false;
+        this.isEditingPost = false;
         this.resetForm();
         await this.fetchPosts(this.currentPagePosts);
       } catch (error) {
@@ -300,7 +337,7 @@ async created() {
         title: '',
         content: '',
       };
-      this.isEditing = false;
+      this.isEditingPost = false;
     },
     logout() {
       localStorage.removeItem('token');
@@ -314,3 +351,4 @@ async created() {
   },
 };
 </script>
+
