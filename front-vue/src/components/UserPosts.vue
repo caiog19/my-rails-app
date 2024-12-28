@@ -31,6 +31,13 @@
       </li>
     </ul>
     <p v-else>Você ainda não publicou nenhum post.</p>
+
+    <div v-if="posts.length">
+      <button @click="fetchPosts(currentPage - 1)" :disabled="currentPage === 1">Anterior</button>
+      <button @click="fetchPosts(currentPage + 1)" :disabled="currentPage === totalPages">Próximo</button>
+    </div>
+
+    <div v-if="loading" class="loading-indicator">Carregando...</div>
   </div>
 </template>
 
@@ -49,20 +56,28 @@ export default {
         content: '',
       },
       isEditing: false,
+      currentPage: 1,
+      totalPages: 1,
+      loading: false,
     };
   },
   async created() {
-    await this.fetchPosts();
+    await this.fetchPosts(1);
   },
   methods: {
-    async fetchPosts() {
+    async fetchPosts(page) {
+      this.loading = true;
       try {
-        const response = await api.get('/meus-posts');
-        this.posts = response.data;
+        const response = await api.get('/meus-posts', { params: { page } });
+        this.posts = response.data.posts;
+        this.currentPage = response.data.meta.current_page;
+        this.totalPages = response.data.meta.total_pages;
       } catch (error) {
         console.error('Erro ao buscar posts:', error);
         alert('Não foi possível carregar os posts. Por favor, faça login novamente.');
-        this.$router.push('/login'); 
+        this.$router.push('/login');
+      } finally {
+        this.loading = false;
       }
     },
     async deletePost(postId) {
@@ -79,14 +94,16 @@ export default {
     editPost(post) {
       this.post = { ...post };
       this.isEditing = true;
-      window.scrollTo({ top: 0, behavior: 'smooth' }); 
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     },
-   
     cancelEdit() {
       this.resetForm();
     },
-   
     async submitPost() {
+      if (!this.post.title || !this.post.content) {
+        alert('Título e conteúdo são obrigatórios.');
+        return;
+      }
       try {
         if (this.isEditing) {
           await api.put(`/posts/${this.post.id}`, {
@@ -102,13 +119,12 @@ export default {
           alert('Post publicado com sucesso!');
         }
         this.resetForm();
-        await this.fetchPosts(); 
+        await this.fetchPosts(this.currentPage);
       } catch (error) {
         console.error('Erro ao salvar o post:', error);
         alert('Não foi possível salvar o post. Verifique os dados e tente novamente.');
       }
     },
-   
     resetForm() {
       this.post = {
         id: null,
@@ -117,16 +133,12 @@ export default {
       };
       this.isEditing = false;
     },
-    
     logout() {
-     
       localStorage.removeItem('token');
       eventBus.updateAuthentication(false);
       this.posts = [];
       this.resetForm();
       this.$router.push('/login');
-      
-      
       alert('Você foi deslogado com sucesso.');
     },
   },
@@ -134,7 +146,6 @@ export default {
 </script>
 
 <style scoped>
-
 .logout-button {
   background-color: #f44336; 
   color: white;
@@ -236,9 +247,9 @@ export default {
   background-color: #d32f2f;
 }
 
-.clearfix::after {
-  content: "";
-  clear: both;
-  display: table;
+.loading-indicator {
+  text-align: center;
+  color: #888;
+  margin-top: 20px;
 }
 </style>
