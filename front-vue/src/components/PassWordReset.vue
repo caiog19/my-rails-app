@@ -29,13 +29,12 @@
     },
     methods: {
       async resetPassword() {
-        if (this.password !== this.passwordConfirmation) {
+          if (this.password !== this.passwordConfirmation) {
           alert('As senhas não coincidem.');
           return;
         }
         try {
-          const response = await api.put('/password_resets', {
-            token: this.token,
+          const response = await api.put(`/password_resets/${this.token}`, {
             password: this.password,
             password_confirmation: this.passwordConfirmation,
           });
