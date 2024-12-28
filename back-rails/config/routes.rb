@@ -27,7 +27,4 @@ Rails.application.routes.draw do
   resources :posts, only: [:index, :create, :update, :destroy]
   resources :users, only: [:index, :destroy]
 
-
-  root to: redirect('https://my-rails-app.vercel.app')
-
 end
