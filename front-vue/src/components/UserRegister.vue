@@ -75,8 +75,6 @@ export default {
     
     async register() {
     this.errors = []; 
-
-    // Validações locais
     if (!this.user.full_name) {
       this.errors.push({ field: 'full_name', message: 'Nome Completo não pode estar vazio' });
     }
@@ -89,8 +87,6 @@ export default {
     if (this.user.password !== this.user.password_confirmation) {
       this.errors.push({ field: 'password_confirmation', message: 'Confirmação de Senha não coincide' });
     }
-
-    // Se houver erros locais, exiba-os e não envie a requisição
     if (this.errors.length) {
       return;
     }
