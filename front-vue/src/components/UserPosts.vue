@@ -75,6 +75,31 @@
 
     <div v-if="loading" class="loading-indicator">Carregando...</div>
   </div>
+
+  <!-- Formulário para editar o cadastro -->
+<div class="edit-profile-form">
+  <h3>Editar Cadastro</h3>
+  <form @submit.prevent="updateProfile">
+    <div>
+      <label for="fullName">Nome Completo:</label>
+      <input v-model="profile.full_name" id="fullName" type="text" required />
+    </div>
+    <div>
+      <label for="email">Email:</label>
+      <input v-model="profile.email" id="email" type="email" required />
+    </div>
+    <div>
+      <label for="password">Nova Senha:</label>
+      <input v-model="profile.password" id="password" type="password" />
+    </div>
+    <div>
+      <label for="passwordConfirmation">Confirme a Nova Senha:</label>
+      <input v-model="profile.password_confirmation" id="passwordConfirmation" type="password" />
+    </div>
+    <button type="submit">Salvar Alterações</button>
+  </form>
+</div>
+
 </template>
 
 <script>
@@ -84,32 +109,66 @@ import { eventBus } from '../eventBus';
 export default {
   name: 'UserPosts',
   data() {
-    return {
-      posts: [], 
-      users: [], 
-      post: {
-        id: null,
-        title: '',
-        content: '',
-      },
-      currentUser: {}, 
-      isEditing: false, 
-      currentPageUsers: 1, 
-      totalPagesUsers: 1, 
-      currentPagePosts: 1, 
-      totalPagesPosts: 1, 
-      isAdmin: false, 
-      loading: false, 
-    };
-  },
-  async created() {
-    await this.fetchCurrentUser(); 
-    await this.fetchPosts(); 
-    if (this.isAdmin) {
-      await this.fetchUsers(); 
-    }
-  },
+  return {
+    posts: [],
+    users: [],
+    post: {
+      id: null,
+      title: '',
+      content: '',
+    },
+    profile: {
+      full_name: '',
+      email: '',
+      password: '',
+      password_confirmation: '',
+    },
+    currentUser: {},
+    isEditing: false,
+    currentPageUsers: 1,
+    totalPagesUsers: 1,
+    currentPagePosts: 1,
+    totalPagesPosts: 1,
+    isAdmin: false,
+    loading: false,
+  };
+},
+async created() {
+  await this.fetchCurrentUser();
+  this.loadProfile(); 
+  await this.fetchPosts();
+  if (this.isAdmin) {
+    await this.fetchUsers();
+  }
+},
   methods: {
+    loadProfile() {
+    this.profile.full_name = this.currentUser.full_name || '';
+    this.profile.email = this.currentUser.email || '';
+  },
+  async updateProfile() {
+  try {
+    await api.put('/auth/update-profile', {
+      user: {
+        full_name: this.profile.full_name,
+        email: this.profile.email,
+        password: this.profile.password,
+        password_confirmation: this.profile.password_confirmation,
+      },
+    }, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    alert('Perfil atualizado com sucesso!');
+    // Optionally, reload the current user data
+    await this.fetchCurrentUser();
+  } catch (error) {
+    console.error('Erro ao atualizar o perfil:', error);
+    alert('Não foi possível atualizar o perfil.');
+  }
+},
+
     async fetchCurrentUser() {
       const token = localStorage.getItem('token');
       try {
@@ -416,4 +475,45 @@ export default {
 .pagination span {
   font-size: 14px;
 }
+.edit-profile-form {
+  border: 1px solid #ccc;
+  padding: 20px;
+  margin-bottom: 30px;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+.edit-profile-form h3 {
+  margin-top: 0;
+}
+
+.edit-profile-form form div {
+  margin-bottom: 15px;
+}
+
+.edit-profile-form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.edit-profile-form input {
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.edit-profile-form button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #4caf50;
+  color: white;
+}
+
+.edit-profile-form button:hover {
+  background-color: #45a049;
+}
+
 </style>
