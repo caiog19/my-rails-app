@@ -30,4 +30,8 @@ Rails.application.routes.draw do
 
   # Rota de autenticação
   get '/auth/me', to: 'auth#me'
+
+  #Att Perfil
+  get '/auth/me', to: 'auth#me'
+  put '/auth/update-profile', to: 'auth#update_profile'
 end
