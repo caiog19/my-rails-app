@@ -2,6 +2,7 @@ Rails.application.routes.draw do
   # Rotas para Posts
   resources :posts, only: [:index, :create, :update, :destroy] do
     resources :comments, only: [:index, :create]
+    resources :tags, only: [:index]
   end
 
   # Raiz da aplicação
@@ -34,4 +35,8 @@ Rails.application.routes.draw do
   #Att Perfil
   get '/auth/me', to: 'auth#me'
   put '/auth/update-profile', to: 'auth#update_profile'
+
+  # Rotas para Tags
+  resources :tags, only: [:index, :create, :destroy]
+
 end
