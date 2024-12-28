@@ -18,6 +18,7 @@ class User < ApplicationRecord
   validates :password_confirmation,
             presence: { message: "é obrigatório" }
 
+  validates :admin, inclusion: { in: [true, false] }
   before_save :capitalize_full_name
   def generate_reset_token!
     update(
