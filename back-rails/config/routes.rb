@@ -1,7 +1,10 @@
 Rails.application.routes.draw do
-  
   # Rotas para Posts
-  resources :posts, only: [:index, :create]
+  resources :posts, only: [:index, :create, :update, :destroy] do
+    resources :comments, only: [:index, :create]
+  end
+
+  # Raiz da aplicação
   root "posts#index"
 
   # Rotas para Usuários
@@ -13,24 +16,18 @@ Rails.application.routes.draw do
   post 'login', to: 'sessions#create'
   delete 'logout', to: 'sessions#destroy'
 
+  # Rotas para reset de senha
   resources :password_resets, only: [:create, :edit, :update], defaults: { format: :json }
 
+  # Rota para favicon
   get '/favicon.ico', to: ->(_) { [204, {}, []] }
 
-  resources :posts, only: [:index, :create, :update, :destroy]
-
+  # Rota para "meus posts"
   get '/meus-posts', to: 'posts#meus_posts'
 
+  # Rotas para usuários
   resources :users, only: [:index, :destroy]
 
+  # Rota de autenticação
   get '/auth/me', to: 'auth#me'
-  resources :posts, only: [:index, :create, :update, :destroy]
-  resources :users, only: [:index, :destroy]
-
-  resources :posts, only: [:index, :create, :update, :destroy] do
-    resources :comments, only: [:index, :create]
-  end
-
-  root "posts#index"
-
 end
