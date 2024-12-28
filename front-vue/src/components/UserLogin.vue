@@ -17,7 +17,8 @@
   
   <script>
   import api from '../services/api';
-  
+  import { eventBus } from '../eventBus';
+
   export default {
     name: 'UserLogin',
     data() {
@@ -34,6 +35,7 @@
           const response = await api.post('/login', this.credentials);
           alert(response.data.message); 
           localStorage.setItem('token', response.data.token); 
+          eventBus.updateAuthentication(true);
           this.$router.push('/'); 
         } catch (error) {
           if (error.response && error.response.data && error.response.data.errors) {

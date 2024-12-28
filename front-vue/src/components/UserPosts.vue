@@ -36,6 +36,7 @@
 
 <script>
 import api from '../services/api';
+import { eventBus } from '../eventBus';
 
 export default {
   name: 'UserPosts',
@@ -120,7 +121,7 @@ export default {
     logout() {
      
       localStorage.removeItem('token');
-      
+      eventBus.updateAuthentication(false);
       this.posts = [];
       this.resetForm();
       this.$router.push('/login');
