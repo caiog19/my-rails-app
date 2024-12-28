@@ -5,7 +5,24 @@
     <!-- Botão para Logout -->
     <button @click="logout" class="logout-button">Logout</button>
 
-    <!-- Lista de usuários para o administrador -->
+    <!-- Formulário para criar ou editar posts -->
+    <div class="post-form">
+      <h3>{{ isEditing ? 'Editar Post' : 'Criar Novo Post' }}</h3>
+      <form @submit.prevent="isEditing ? updatePost() : submitPost()">
+        <div>
+          <label for="title">Título:</label>
+          <input v-model="post.title" id="title" type="text" required />
+        </div>
+        <div>
+          <label for="content">Conteúdo:</label>
+          <textarea v-model="post.content" id="content" required></textarea>
+        </div>
+        <button type="submit">{{ isEditing ? 'Salvar Alterações' : 'Publicar Post' }}</button>
+        <button type="button" v-if="isEditing" @click="cancelEdit" class="cancel-button">Cancelar</button>
+      </form>
+    </div>
+
+    <!-- Lista de usuários para administradores -->
     <div v-if="isAdmin" class="admin-section">
       <h3>Lista de Usuários</h3>
       <ul v-if="users && users.length">
@@ -23,29 +40,19 @@
       </div>
     </div>
 
-    <!-- Formulário e lista de posts -->
-    <div class="post-form">
-      <h3>{{ isEditing ? 'Editar Post' : 'Criar Novo Post' }}</h3>
-      <form @submit.prevent="submitPost">
-        <div>
-          <label for="title">Título:</label>
-          <input v-model="post.title" id="title" type="text" required />
-        </div>
-        <div>
-          <label for="content">Conteúdo:</label>
-          <textarea v-model="post.content" id="content" required></textarea>
-        </div>
-        <button type="submit">{{ isEditing ? 'Salvar Alterações' : 'Publicar Post' }}</button>
-        <button type="button" v-if="isEditing" @click="cancelEdit" class="cancel-button">Cancelar</button>
-      </form>
-    </div>
-
     <!-- Lista de posts -->
     <ul v-if="posts && posts.length">
       <li v-for="post in posts" :key="post.id">
         <h3>{{ post.title }}</h3>
         <p>{{ post.content }}</p>
         <div class="post-actions">
+          <button
+            v-if="isAdmin || post.user_id === currentUser.id"
+            @click="editPost(post)"
+            class="edit-button"
+          >
+            Editar
+          </button>
           <button
             v-if="isAdmin || post.user_id === currentUser.id"
             @click="deletePost(post.id)"
@@ -160,25 +167,36 @@ export default {
     cancelEdit() {
       this.resetForm();
     },
+    async updatePost() {
+      if (!this.post.title || !this.post.content) {
+        alert('Título e conteúdo são obrigatórios.');
+        return;
+      }
+      try {
+        const token = localStorage.getItem('token');
+        await api.put(`/posts/${this.post.id}`, this.post, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        alert('Post atualizado com sucesso!');
+        this.isEditing = false;
+        this.resetForm();
+        await this.fetchPosts(this.currentPage);
+      } catch (error) {
+        console.error('Erro ao atualizar post:', error);
+        alert('Não foi possível atualizar o post.');
+      }
+    },
     async submitPost() {
       if (!this.post.title || !this.post.content) {
         alert('Título e conteúdo são obrigatórios.');
         return;
       }
       try {
-        if (this.isEditing) {
-          await api.put(`/posts/${this.post.id}`, {
-            title: this.post.title,
-            content: this.post.content,
-          });
-          alert('Post atualizado com sucesso!');
-        } else {
-          await api.post('/posts', {
-            title: this.post.title,
-            content: this.post.content,
-          });
-          alert('Post publicado com sucesso!');
-        }
+        await api.post('/posts', {
+          title: this.post.title,
+          content: this.post.content,
+        });
+        alert('Post publicado com sucesso!');
         this.resetForm();
         await this.fetchPosts(this.currentPage);
       } catch (error) {
@@ -205,7 +223,6 @@ export default {
   },
 };
 </script>
-
 
 <style scoped>
 .logout-button {

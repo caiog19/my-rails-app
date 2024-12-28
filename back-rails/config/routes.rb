@@ -27,4 +27,10 @@ Rails.application.routes.draw do
   resources :posts, only: [:index, :create, :update, :destroy]
   resources :users, only: [:index, :destroy]
 
+  resources :posts, only: [:index, :create, :update, :destroy] do
+    resources :comments, only: [:index, :create]
+  end
+
+  root "posts#index"
+
 end
