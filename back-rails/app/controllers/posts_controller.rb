@@ -6,9 +6,14 @@ class PostsController < ApplicationController
   def index
     if params[:query].present?
       query = "%#{params[:query]}%"
-      @posts = Post.where("title LIKE :query OR content LIKE :query", query: query)
+      @posts = Post.joins(:user)
+                   .select('posts.*, users.full_name as user_full_name')
+                   .where("posts.title LIKE :query OR posts.content LIKE :query", query: query)
+                   .order(created_at: :desc)
     else
-      @posts = Post.order(created_at: :desc)
+      @posts = Post.joins(:user)
+                   .select('posts.*, users.full_name as user_full_name')
+                   .order(created_at: :desc)
     end
     @posts = @posts.page(params[:page]).per(3)
     render json: {
@@ -18,7 +23,7 @@ class PostsController < ApplicationController
         total_pages: @posts.total_pages,
         total_count: @posts.total_count
       }
-    }, status: :ok
+    }
   end
 
   # Meus Posts (do usuário autenticado)
@@ -48,22 +53,26 @@ class PostsController < ApplicationController
 
   # Atualizar um post existente
   def update
-    if @post.user_id == @current_user.id
+    if @current_user.admin? || @post.user_id == @current_user.id
       if @post.update(post_params)
-        render json: @post, status: :ok
+        render json: { message: "Post atualizado com sucesso!", post: @post }, status: :ok
       else
         render json: { errors: @post.errors.full_messages }, status: :unprocessable_entity
       end
     else
-      render json: { error: 'Você não tem permissão para editar este post' }, status: :forbidden
+      render json: { errors: ["Você não tem permissão para editar este post."] }, status: :forbidden
     end
   end
 
   # Excluir um post
+
   def destroy
-    if @post.user_id == @current_user.id
-      @post.destroy
-      render json: { message: 'Post excluído com sucesso' }, status: :ok
+    if @current_user.admin? || @post.user_id == @current_user.id
+      if @post.destroy
+        render json: { message: 'Post excluído com sucesso' }, status: :ok
+      else
+        render json: { errors: @post.errors.full_messages }, status: :unprocessable_entity
+      end
     else
       render json: { error: 'Você não tem permissão para excluir este post' }, status: :forbidden
     end
@@ -77,7 +86,11 @@ class PostsController < ApplicationController
       render json: { errors: "Você não tem permissão para excluir este post" }, status: :forbidden
     end
   end
-
+  def authorize_admin_or_owner
+    unless current_user.admin? || @post.user_id == current_user.id
+      render json: { error: "Você não tem permissão para realizar esta ação." }, status: :forbidden
+    end
+  end
   def set_post
     @post = Post.find(params[:id])
   rescue ActiveRecord::RecordNotFound

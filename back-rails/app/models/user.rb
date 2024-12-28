@@ -26,7 +26,9 @@ class User < ApplicationRecord
       reset_password_sent_at: Time.now
     )
   end
-
+  def admin?
+    self.admin
+  end
   private
 
   def capitalize_full_name
