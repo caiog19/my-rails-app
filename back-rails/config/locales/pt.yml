@@ -1,0 +1,28 @@
+pt:
+  activerecord:
+    models:
+      user: "Usuário"
+    attributes:
+      user:
+        email: "Email"
+        password: "Senha"
+        password_confirmation: "Confirmação de Senha"
+        full_name: "Nome Completo"
+    errors:
+      format: "%{attribute} %{message}"
+      models:
+        user:
+          attributes:
+            email:
+              blank: "não pode estar em branco"
+              taken: "já está em uso"
+              invalid: "não é válido"
+            full_name:
+              blank: "não pode estar em branco"
+              too_long: "deve ter no máximo %{count} caracteres"
+            password:
+              blank: "não pode estar em branco"
+              too_short: "deve ter no mínimo %{count} caracteres"
+              confirmation: "não coincide com a confirmação"
+            password_confirmation:
+              blank: "não pode estar em branco"
