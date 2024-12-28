@@ -18,7 +18,7 @@ class PostsController < ApplicationController
         total_pages: @posts.total_pages,
         total_count: @posts.total_count
       }
-    }
+    }, status: :ok
   end
 
   # Meus Posts (do usuário autenticado)
@@ -70,6 +70,13 @@ class PostsController < ApplicationController
   end
 
   private
+  # Permitir exclusão apenas se o usuário for admin ou autor do post
+  def authorize_destroy_post
+    post = Post.find(params[:id])
+    unless @current_user.admin? || post.user_id == @current_user.id
+      render json: { errors: "Você não tem permissão para excluir este post" }, status: :forbidden
+    end
+  end
 
   def set_post
     @post = Post.find(params[:id])
