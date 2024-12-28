@@ -33,10 +33,11 @@
       </ul>
       <p v-else>Não há usuários cadastrados.</p>
 
-      <!-- Controles de paginação -->
-      <div v-if="users && users.length">
-        <button @click="fetchUsers(currentPage - 1)" :disabled="currentPage === 1">Anterior</button>
-        <button @click="fetchUsers(currentPage + 1)" :disabled="currentPage === totalPages">Próximo</button>
+      <!-- Controles de paginação para usuários -->
+      <div v-if="users && users.length" class="pagination">
+        <button @click="fetchUsers(currentPageUsers - 1)" :disabled="currentPageUsers === 1">Anterior</button>
+        <span>Página {{ currentPageUsers }} de {{ totalPagesUsers }}</span>
+        <button @click="fetchUsers(currentPageUsers + 1)" :disabled="currentPageUsers === totalPagesUsers">Próximo</button>
       </div>
     </div>
 
@@ -64,6 +65,15 @@
       </li>
     </ul>
     <p v-else>Você ainda não publicou nenhum post.</p>
+
+    <!-- Controles de paginação para posts -->
+    <div v-if="posts && posts.length" class="pagination">
+      <button @click="fetchPosts(currentPagePosts - 1)" :disabled="currentPagePosts === 1">Anterior</button>
+      <span>Página {{ currentPagePosts }} de {{ totalPagesPosts }}</span>
+      <button @click="fetchPosts(currentPagePosts + 1)" :disabled="currentPagePosts === totalPagesPosts">Próximo</button>
+    </div>
+
+    <div v-if="loading" class="loading-indicator">Carregando...</div>
   </div>
 </template>
 
@@ -84,8 +94,10 @@ export default {
       },
       currentUser: {}, 
       isEditing: false, 
-      currentPage: 1, 
-      totalPages: 1, 
+      currentPageUsers: 1, 
+      totalPagesUsers: 1, 
+      currentPagePosts: 1, 
+      totalPagesPosts: 1, 
       isAdmin: false, 
       loading: false, 
     };
@@ -113,14 +125,17 @@ export default {
       }
     },
     async fetchUsers(page = 1) {
+      this.loading = true;
       try {
         const response = await api.get('/users', { params: { page } });
         this.users = response.data.users || [];
-        this.currentPage = response.data.meta.current_page || 1;
-        this.totalPages = response.data.meta.total_pages || 1;
+        this.currentPageUsers = response.data.meta.current_page || 1;
+        this.totalPagesUsers = response.data.meta.total_pages || 1;
       } catch (error) {
         console.error('Erro ao buscar usuários:', error);
         this.users = [];
+      } finally {
+        this.loading = false;
       }
     },
     async fetchPosts(page = 1) {
@@ -128,8 +143,8 @@ export default {
       try {
         const response = await api.get('/meus-posts', { params: { page } });
         this.posts = response.data.posts || [];
-        this.currentPage = response.data.meta.current_page || 1;
-        this.totalPages = response.data.meta.total_pages || 1;
+        this.currentPagePosts = response.data.meta.current_page || 1;
+        this.totalPagesPosts = response.data.meta.total_pages || 1;
       } catch (error) {
         console.error('Erro ao buscar posts:', error);
         this.posts = [];
@@ -140,8 +155,15 @@ export default {
     async deleteUser(userId) {
       if (!confirm('Tem certeza de que deseja excluir este usuário?')) return;
       try {
-        await api.delete(`/users/${userId}`);
-        this.users = this.users.filter((user) => user.id !== userId);
+        const token = localStorage.getItem('token');
+        await api.delete(`/users/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (this.users.length === 1 && this.currentPage > 1) {
+          this.currentPage--;
+        }
+        await this.fetchUsers(this.currentPage);
+
         alert('Usuário excluído com sucesso!');
       } catch (error) {
         console.error('Erro ao excluir usuário:', error);
@@ -151,14 +173,22 @@ export default {
     async deletePost(postId) {
       if (!confirm('Tem certeza de que deseja excluir este post?')) return;
       try {
-        await api.delete(`/posts/${postId}`);
-        this.posts = this.posts.filter((post) => post.id !== postId);
+        const token = localStorage.getItem('token');
+        await api.delete(`/posts/${postId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (this.posts.length === 1 && this.currentPage > 1) {
+          this.currentPage--;
+        }
+        await this.fetchPosts(this.currentPage);
+
         alert('Post excluído com sucesso!');
       } catch (error) {
         console.error('Erro ao excluir post:', error);
         alert('Não foi possível excluir o post.');
       }
     },
+
     editPost(post) {
       this.post = { ...post };
       this.isEditing = true;
@@ -180,7 +210,7 @@ export default {
         alert('Post atualizado com sucesso!');
         this.isEditing = false;
         this.resetForm();
-        await this.fetchPosts(this.currentPage);
+        await this.fetchPosts(this.currentPagePosts);
       } catch (error) {
         console.error('Erro ao atualizar post:', error);
         alert('Não foi possível atualizar o post.');
@@ -198,7 +228,7 @@ export default {
         });
         alert('Post publicado com sucesso!');
         this.resetForm();
-        await this.fetchPosts(this.currentPage);
+        await this.fetchPosts(this.currentPagePosts);
       } catch (error) {
         console.error('Erro ao salvar o post:', error);
         alert('Não foi possível salvar o post. Verifique os dados e tente novamente.');
@@ -216,6 +246,7 @@ export default {
       localStorage.removeItem('token');
       eventBus.updateAuthentication(false);
       this.posts = [];
+      this.users = [];
       this.resetForm();
       this.$router.push('/login');
       alert('Você foi deslogado com sucesso.');
@@ -332,22 +363,57 @@ export default {
   margin-top: 20px;
 }
 
-.admin-section button {
-  margin: 5px;
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  background-color: #f9f9f9;
+.admin-section {
+  margin-bottom: 40px;
+}
+
+.admin-section h3 {
+  margin-bottom: 15px;
+}
+
+.admin-section ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.admin-section li {
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-section li p {
+  margin: 0;
+}
+
+.admin-section .delete-button {
+  padding: 5px 10px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.pagination button {
+  background-color: #2196f3;
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
 }
 
-.admin-section button:hover {
-  background-color: #e9e9e9;
-}
-
-.admin-section button:disabled {
-  background-color: #f1f1f1;
-  color: #aaa;
+.pagination button:disabled {
+  background-color: #b0bec5;
   cursor: not-allowed;
 }
 
+.pagination span {
+  font-size: 14px;
+}
 </style>

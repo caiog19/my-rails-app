@@ -53,7 +53,7 @@
 
     <p v-else>Não há posts publicados ainda.</p>
 
-    <div v-if="posts.length" class="pagination">
+    <div v-if="totalPages > 1" class="pagination">
       <button @click="fetchPosts(currentPage - 1)" :disabled="currentPage === 1">
         Anterior
       </button>
@@ -82,7 +82,7 @@ export default {
       isAdmin: false,
       isEditing: false,
       editingPostId: null,
-      newComments: {}, // Novo comentário por post
+      newComments: {}, 
     };
   },
   async created() {
@@ -164,6 +164,7 @@ export default {
     startEditPost(post) {
       this.isEditing = true;
       this.editingPostId = post.id;
+      this.$set(this, 'editingPost', { ...post });
     },
     async updatePost() {
       try {
@@ -199,8 +200,17 @@ export default {
         await api.delete(`/posts/${postId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        this.posts = this.posts.filter((post) => post.id !== postId);
         alert('Post excluído com sucesso!');
+        this.posts = this.posts.filter((post) => post.id !== postId);
+        if (this.posts.length === 0) {
+          if (this.currentPage > 1) {
+            this.currentPage--;
+          }
+          await this.fetchPosts(this.currentPage);
+        } else {
+          await this.fetchPosts(this.currentPage);
+        }
+
       } catch (error) {
         console.error('Erro ao excluir post:', error);
         alert('Não foi possível excluir o post.');
@@ -250,8 +260,7 @@ h3 {
 }
 
 .delete-button {
-  background-color: #f44336
-  ;
+  background-color: #f44336;
   color: white;
   padding: 5px 10px;
   border: none;
