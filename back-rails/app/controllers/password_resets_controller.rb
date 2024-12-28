@@ -18,7 +18,6 @@ class PasswordResetsController < ApplicationController
         return render json: { errors: ["Erro ao enviar o email. Tente novamente mais tarde."] }, status: :internal_server_error
       end
     end
-    # Responde para o frontend que, se o email existir, as instruções foram enviadas
     render json: { message: "Se o email existir, as instruções serão enviadas." }, status: :ok
   end
   
@@ -35,16 +34,31 @@ class PasswordResetsController < ApplicationController
   
   
   def update
-    user = User.find_by(reset_password_token: params[:token].to_s.strip)
+    Rails.logger.debug("Iniciando redefinição de senha...")
   
-    if user.nil? || user.reset_password_sent_at.nil? || user.reset_password_sent_at <= 2.hours.ago
+    Rails.logger.debug("Token recebido: #{params[:id]}")
+  
+    user = User.find_by(reset_password_token: params[:id].to_s.strip)
+  
+    if user.nil?
+      Rails.logger.debug("Usuário não encontrado para o token: #{params[:id]}")
+      return render json: { errors: ["Token inválido ou expirado"] }, status: :unprocessable_entity
+    end
+  
+    Rails.logger.debug("Reset enviado em: #{user.reset_password_sent_at}")
+    Rails.logger.debug("Limite de expiração do token: #{2.hours.ago}")
+  
+    if user.reset_password_sent_at.nil? || user.reset_password_sent_at <= 2.hours.ago
+      Rails.logger.debug("Token expirado para o usuário: #{user.email}")
       return render json: { errors: ["Token inválido ou expirado"] }, status: :unprocessable_entity
     end
   
     if user.update(password_params)
-      user.update(reset_password_token: nil) 
+      Rails.logger.debug("Senha atualizada com sucesso para o usuário: #{user.email}")
+      user.update(reset_password_token: nil)
       render json: { message: "Senha atualizada com sucesso!" }, status: :ok
     else
+      Rails.logger.debug("Erro ao atualizar senha: #{user.errors.full_messages}")
       render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
     end
   end
