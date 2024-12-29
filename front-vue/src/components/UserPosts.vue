@@ -180,7 +180,7 @@
 <script>
 import api from '../services/api';
 import { eventBus } from '../eventBus';
-import './BlogComponents.css';
+import '../styles/BlogComponents.css';
 import EditableField from './EditableField.vue';
 
 export default {

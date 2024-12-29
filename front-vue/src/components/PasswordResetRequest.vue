@@ -26,7 +26,7 @@
 
 <script>
 import api from '../services/api';
-import './BlogAuth.css';
+import '../styles/BlogAuth.css';
 export default {
   name: 'PasswordResetRequest',
   data() {

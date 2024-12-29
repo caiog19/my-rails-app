@@ -40,7 +40,7 @@
 <script>
 import api from '../services/api';
 import { eventBus } from '../eventBus';
-import './BlogAuth.css';
+import '../styles/BlogAuth.css';
 
 export default {
   name: 'UserLogin',
