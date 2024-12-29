@@ -1,27 +1,24 @@
 <template>
-  <div>
-    <h1>Bem-vindo ao Blog</h1>
-    <h2>Posts Recentes</h2>
+  <div class="home-container">
+    <h1>Posts Recentes</h1>
 
-    <ul v-if="posts.length">
-      <li v-for="post in posts" :key="post.id">
+    <ul class="post-list" v-if="posts.length">
+      <li class="post-item" v-for="post in posts" :key="post.id">
         <h3>{{ post.title }}</h3>
         <p><small>Publicado por: {{ post.user_full_name }}</small></p>
         <p>{{ post.content }}</p>
 
-        <div v-if="post.tags && post.tags.length">
+        <div class="post-tags" v-if="post.tags && post.tags.length">
           <p><strong>Tags:</strong></p>
           <ul>
             <li v-for="tag in post.tags" :key="tag.id">{{ tag.name }}</li>
           </ul>
         </div>
 
-        <div v-if="currentUser && post.user_id === currentUser.id">
+        <div class="button-group" v-if="currentUser && post.user_id === currentUser.id">
           <button @click="startEditPost(post)" class="edit-button">Editar</button>
         </div>
-        <div v-if="isAdmin || (currentUser && post.user_id === currentUser.id)">
-          <button @click="deletePost(post.id)" class="delete-button">Excluir</button>
-        </div>
+
 
         <div v-if="isEditing && editingPostId === post.id" class="post-form">
           <h3>Editar Post</h3>
@@ -41,24 +38,30 @@
 
         <div class="comments-section">
           <h4>Comentários</h4>
-          <ul v-if="post.comments && post.comments.length">
+          <ul class="comments-list" v-if="post.comments && post.comments.length">
             <li v-for="comment in post.comments" :key="comment.id">
               <p><strong>{{ comment.author_name }}</strong>: {{ comment.content }}</p>
             </li>
           </ul>
           <p v-else>Não há comentários ainda.</p>
 
-          <form @submit.prevent="addComment(post.id)">
-            <textarea v-model="newComments[post.id]" placeholder="Escreva um comentário..."></textarea>
-            <button type="submit">Comentar</button>
-          </form>
+          <div class="container-admin">
+            <form @submit.prevent="addComment(post.id)" class="comment-form">
+              <textarea v-model="newComments[post.id]" placeholder="Escreva um comentário..."></textarea>
+              <button type="submit" class="post-button">Comentar</button>
+            </form>
+            <button v-if="isAdmin || (currentUser && post.user_id === currentUser.id)" @click="deletePost(post.id)"
+              class="delete-button">Excluir Post</button>
+          </div>
+
+
         </div>
       </li>
     </ul>
 
     <p v-else>Não há posts publicados ainda.</p>
 
-    <div v-if="totalPages > 1" class="pagination">
+    <div class="pagination" v-if="totalPages > 1">
       <button @click="fetchPosts(currentPage - 1)" :disabled="currentPage === 1">
         Anterior
       </button>
@@ -68,12 +71,13 @@
       </button>
     </div>
 
-    <div v-if="loading" class="loading-indicator">Carregando...</div>
+    <div class="loading-indicator" v-if="loading">Carregando...</div>
   </div>
 </template>
 
 <script>
 import api from '../services/api';
+import '../styles/BlogHome.css';
 
 export default {
   name: 'BlogHome',
@@ -176,7 +180,7 @@ export default {
       }
       this.isEditing = true;
       this.editingPostId = post.id;
-      this.editingPost = { ...post }; 
+      this.editingPost = { ...post };
     },
     async updatePost() {
       try {
@@ -225,115 +229,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-h1 {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-li {
-  margin-bottom: 15px;
-}
-
-h3 {
-  margin: 0 0 5px;
-}
-
-.loading-indicator {
-  text-align: center;
-  color: #888;
-  margin-top: 20px;
-}
-
-.edit-button {
-  background-color: #2196f3;
-  color: white;
-  padding: 5px 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-right: 10px;
-}
-
-.edit-button:hover {
-  background-color: #1976d2;
-}
-
-.delete-button {
-  background-color: #f44336;
-  color: white;
-  padding: 5px 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.delete-button:hover {
-  background-color: #d32f2f;
-}
-
-.post-form {
-  margin-top: 10px;
-  border: 1px solid #ccc;
-  padding: 10px;
-  border-radius: 4px;
-  background-color: #f9f9f9;
-}
-
-.comments-section {
-  margin-top: 15px;
-  border-top: 1px solid #ddd;
-  padding-top: 10px;
-}
-
-.comments-section h4 {
-  margin: 0 0 10px;
-}
-
-.comments-section ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-.comments-section li {
-  margin-bottom: 10px;
-}
-
-textarea {
-  width: 100%;
-  min-height: 50px;
-  margin-bottom: 10px;
-}
-
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 15px;
-  margin-top: 20px;
-}
-
-.pagination button {
-  background-color: #2196f3;
-  color: white;
-  padding: 5px 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.pagination button:disabled {
-  background-color: #b0bec5;
-  cursor: not-allowed;
-}
-
-.pagination span {
-  font-size: 14px;
-}
-</style>

@@ -1,178 +1,188 @@
 <template>
-  <div>
-    <h2>Meus Posts</h2>
+  <div class="app-container">
+    <div class="content">
+      <h2 class="section-title">Meus Posts</h2>
 
-    <button @click="logout" class="logout-button">Logout</button>
+      <div class="tag-form card">
+        <h3>Criar Nova Tag</h3>
+        <form @submit.prevent="createTag">
+          <input
+            v-model="newTagName"
+            type="text"
+            placeholder="Nome da Tag"
+            required
+            class="input-field"
+          />
+          <button type="submit" class="btn btn-primary">Criar Tag</button>
+        </form>
+      </div>
 
-    <div class="tag-form">
-      <h3>Criar Nova Tag</h3>
-      <form @submit.prevent="createTag">
-        <input
-          v-model="newTagName"
-          type="text"
-          placeholder="Nome da Tag"
-          required
-        />
-        <button type="submit">Criar Tag</button>
-      </form>
-    </div>
+      <div class="post-form card">
+        <h3>{{ isEditingPost ? 'Editar Post' : 'Criar Novo Post' }}</h3>
+        <form @submit.prevent="isEditingPost ? updatePost() : submitPost()">
+          <div class="form-group">
+            <label for="title">Título:</label>
+            <input v-model="post.title" id="title" type="text" required class="input-field" />
+          </div>
+          <div class="form-group">
+            <label for="content">Conteúdo:</label>
+            <textarea v-model="post.content" id="content" required class="input-field"></textarea>
+          </div>
 
-    <div class="post-form">
-      <h3>{{ isEditingPost ? 'Editar Post' : 'Criar Novo Post' }}</h3>
-      <form @submit.prevent="isEditingPost ? updatePost() : submitPost()">
-        <div>
-          <label for="title">Título:</label>
-          <input v-model="post.title" id="title" type="text" required />
-        </div>
-        <div>
-          <label for="content">Conteúdo:</label>
-          <textarea v-model="post.content" id="content" required></textarea>
-        </div>
+          <div class="form-group">
+            <label for="tags">Tags:</label>
+            <select id="tags" v-model="post.tag_ids" multiple class="input-field">
+              <option v-for="tag in tags" :key="tag.id" :value="tag.id">
+                {{ tag.name }}
+              </option>
+            </select>
+            <p class="selected-tags">Tags selecionadas: {{ post.tag_ids }}</p>
+          </div>
 
-        <div>
-          <label for="tags">Tags:</label>
-          <select id="tags" v-model="post.tag_ids" multiple>
-            <option v-for="tag in tags" :key="tag.id" :value="tag.id">
-              {{ tag.name }}
-            </option>
-          </select>
-          <p>Tags selecionadas: {{ post.tag_ids }}</p>
-        </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+              {{ isEditingPost ? 'Salvar Alterações' : 'Publicar Post' }}
+            </button>
+            <button
+              type="button"
+              v-if="isEditingPost"
+              @click="cancelEditPost"
+              class="btn btn-secondary"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
 
-        <button type="submit">
-          {{ isEditingPost ? 'Salvar Alterações' : 'Publicar Post' }}
-        </button>
-        <button
-          type="button"
-          v-if="isEditingPost"
-          @click="cancelEditPost"
-          class="cancel-button"
-        >
-          Cancelar
-        </button>
-      </form>
-    </div>
+      <div v-if="isAdmin" class="admin-section card">
+        <h3>Lista de Usuários</h3>
+        <ul v-if="users && users.length" class="user-list">
+          <li v-for="user in users" :key="user.id" class="user-item">
+            <div>
+              <p class="user-name">{{ user.full_name }}</p>
+              <p class="user-email">{{ user.email }}</p>
+            </div>
+            <button @click="deleteUser(user.id)" class="btn btn-danger">Excluir Usuário</button>
+          </li>
+        </ul>
+        <p v-else class="no-users">Não há usuários cadastrados.</p>
 
-    <div v-if="isAdmin" class="admin-section">
-      <h3>Lista de Usuários</h3>
-      <ul v-if="users && users.length">
-        <li v-for="user in users" :key="user.id">
-          <p>{{ user.full_name }} - {{ user.email }}</p>
-          <button @click="deleteUser(user.id)" class="delete-button">
-            Excluir Usuário
+        <div v-if="users && users.length" class="pagination">
+          <button
+            @click="fetchUsers(currentPageUsers - 1)"
+            :disabled="currentPageUsers === 1"
+            class="btn btn-pagination"
+          >
+            Anterior
           </button>
+          <span class="pagination-info">Página {{ currentPageUsers }} de {{ totalPagesUsers }}</span>
+          <button
+            @click="fetchUsers(currentPageUsers + 1)"
+            :disabled="currentPageUsers === totalPagesUsers"
+            class="btn btn-pagination"
+          >
+            Próximo
+          </button>
+        </div>
+      </div>
+
+      <ul v-if="posts && posts.length" class="post-list">
+        <li v-for="post in posts" :key="post.id" class="post-item card">
+          <h3 class="post-title">{{ post.title }}</h3>
+          <p class="post-content">{{ post.content }}</p>
+
+          <div v-if="post.tags && post.tags.length" class="post-tags">
+            <strong>Tags:</strong>
+            <ul class="tag-list">
+              <li v-for="tag in post.tags" :key="tag.id" class="tag-item">{{ tag.name }}</li>
+            </ul>
+          </div>
+
+          <div class="post-actions">
+            <button
+              v-if="isAdmin || post.user_id === currentUser.id"
+              @click="editPost(post)"
+              class="btn btn-edit"
+            >
+              Editar
+            </button>
+            <button
+              v-if="isAdmin || post.user_id === currentUser.id"
+              @click="deletePost(post.id)"
+              class="btn btn-delete"
+            >
+              Excluir
+            </button>
+          </div>
         </li>
       </ul>
-      <p v-else>Não há usuários cadastrados.</p>
+      <p v-else class="no-posts">Você ainda não publicou nenhum post.</p>
 
-      <div v-if="users && users.length" class="pagination">
+      <div v-if="posts && posts.length" class="pagination">
         <button
-          @click="fetchUsers(currentPageUsers - 1)"
-          :disabled="currentPageUsers === 1"
+          @click="fetchPosts(currentPagePosts - 1)"
+          :disabled="currentPagePosts === 1"
+          class="btn btn-pagination"
         >
           Anterior
         </button>
-        <span>Página {{ currentPageUsers }} de {{ totalPagesUsers }}</span>
+        <span class="pagination-info">Página {{ currentPagePosts }} de {{ totalPagesPosts }}</span>
         <button
-          @click="fetchUsers(currentPageUsers + 1)"
-          :disabled="currentPageUsers === totalPagesUsers"
+          @click="fetchPosts(currentPagePosts + 1)"
+          :disabled="currentPagePosts === totalPagesPosts"
+          class="btn btn-pagination"
         >
           Próximo
         </button>
       </div>
-    </div>
 
-    <ul v-if="posts && posts.length">
-      <li v-for="post in posts" :key="post.id">
-        <h3>{{ post.title }}</h3>
-        <p>{{ post.content }}</p>
+      <div v-if="loading" class="loading-indicator">Carregando...</div>
 
-        <div v-if="post.tags && post.tags.length">
-          <strong>Tags:</strong>
-          <ul>
-            <li v-for="tag in post.tags" :key="tag.id">{{ tag.name }}</li>
-          </ul>
+      <div class="edit-profile-form card">
+        <h3>Editar Cadastro</h3>
+
+        <div v-if="isAdmin || post.user_id === currentUser.id" class="info">
+          Você é um admin, e não pode editar o seu cadastro
         </div>
 
-        <div class="post-actions">
-          <button
-            v-if="isAdmin || post.user_id === currentUser.id"
-            @click="editPost(post)"
-            class="edit-button"
-          >
-            Editar
-          </button>
-          <button
-            v-if="isAdmin || post.user_id === currentUser.id"
-            @click="deletePost(post.id)"
-            class="delete-button"
-          >
-            Excluir
-          </button>
-        </div>
-      </li>
-    </ul>
-    <p v-else>Você ainda não publicou nenhum post.</p>
+        <EditableField
+          ref="editableFullName"
+          label="Nome Completo"
+          id="fullName"
+          :value="profile.full_name"
+          field="full_name"
+          type="text"
+          required
+          :is-admin="isAdmin"
+          @save="handleSave"
+        />
 
-    <div v-if="posts && posts.length" class="pagination">
-      <button
-        @click="fetchPosts(currentPagePosts - 1)"
-        :disabled="currentPagePosts === 1"
-      >
-        Anterior
-      </button>
-      <span>Página {{ currentPagePosts }} de {{ totalPagesPosts }}</span>
-      <button
-        @click="fetchPosts(currentPagePosts + 1)"
-        :disabled="currentPagePosts === totalPagesPosts"
-      >
-        Próximo
-      </button>
-    </div>
+        <EditableField
+          ref="editableEmail"
+          label="Email"
+          id="email"
+          :value="profile.email"
+          field="email"
+          type="email"
+          required
+          :is-admin="isAdmin"
+          @save="handleSave"
+        />
 
-    <div v-if="loading" class="loading-indicator">Carregando...</div>
-
-    <div class="edit-profile-form">
-      <h3>Editar Cadastro</h3>
-
-      <div v-if="isAdmin || post.user_id === currentUser.id" class="info">Você é um admin, e não pode editar o seu cadastro</div>
-
-      <EditableField
-        ref="editableFullName"
-        label="Nome Completo"
-        id="fullName"
-        :value="profile.full_name"
-        field="full_name"
-        type="text"
-        required
-        :is-admin="isAdmin"
-        @save="handleSave"
-      />
-
-      <EditableField
-        ref="editableEmail"
-        label="Email"
-        id="email"
-        :value="profile.email"
-        field="email"
-        type="email"
-        required
-        :is-admin="isAdmin"
-        @save="handleSave"
-      />
-
-      <EditableField
-        ref="editablePassword"
-        label="Nova Senha"
-        id="password"
-        :value="passwordPlaceholder"
-        field="password"
-        type="password"
-        placeholder="Nova Senha"
-        required
-        :is-admin="isAdmin"
-        @save="handleSave"
-      />
+        <EditableField
+          ref="editablePassword"
+          label="Nova Senha"
+          id="password"
+          :value="passwordPlaceholder"
+          field="password"
+          type="password"
+          placeholder="Nova Senha"
+          required
+          :is-admin="isAdmin"
+          @save="handleSave"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -180,7 +190,7 @@
 <script>
 import api from '../services/api';
 import { eventBus } from '../eventBus';
-import './BlogComponents.css';
+import '../styles/BlogUserPosts.css';
 import EditableField from './EditableField.vue';
 
 export default {
@@ -467,50 +477,3 @@ export default {
   },
 };
 </script>
-
-<style>
-.logout-button {
-  margin-bottom: 20px;
-}
-.post-form {
-  margin-bottom: 40px;
-}
-.tag-form {
-  margin-bottom: 30px;
-}
-.cancel-button {
-  margin-left: 10px;
-  background-color: #f44336;
-  color: white;
-}
-.cancel-button:hover {
-  background-color: #d32f2f;
-}
-.delete-button {
-  background-color: #f44336;
-  color: white;
-  margin-left: 10px;
-}
-.delete-button:hover {
-  background-color: #d32f2f;
-}
-.edit-button {
-  background-color: #2196f3;
-  color: white;
-}
-.edit-button:hover {
-  background-color: #1976d2;
-}
-.loading-indicator {
-  margin-top: 20px;
-  font-weight: bold;
-}
-.pagination {
-  margin-top: 20px;
-}
-.edit-profile-form {
-  margin-top: 40px;
-  border-top: 1px solid #ccc;
-  padding-top: 20px;
-}
-</style>
