@@ -1,5 +1,6 @@
 class SessionsController < ApplicationController
   skip_before_action :authorize_request, only: [:create]
+  
   def create
     user = User.find_by(email: params[:email])
     if user.present?
@@ -25,7 +26,6 @@ class SessionsController < ApplicationController
         end
       end
     else
-      # Se não achar nenhum usuário, não dê detalhes para não vazar informação
       render json: { errors: ["Email ou senha inválidos"] }, status: :unauthorized
     end
   end

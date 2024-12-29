@@ -1,13 +1,13 @@
 class Rack::Attack
-    # permitir 20 requisições de login por IP a cada 1 minuto
-    throttle('req/ip', limit: 20, period: 1.minute) do |req|
-      req.ip if req.path == '/login' && req.post?
-    end
-  
-    # banir IPs maliciosos
-    blocklist('block 1.2.3.4') do |req|
-      req.ip == '1.2.3.4'
-    end
+  # permitir 20 requisições de login por IP a cada 1 minuto
+  throttle('req/ip', limit: 20, period: 1.minute) do |req|
+    req.ip if req.path == '/login' && req.post?
+  end
+
+  # banir IPs maliciosos
+  blocklist('block 1.2.3.4') do |req|
+    req.ip == '1.2.3.4'
+  end
 
   throttle('signup/ip', limit: 5, period: 1.minute) do |req|
     req.ip if req.path == '/users' && req.post?
@@ -18,6 +18,11 @@ class Rack::Attack
     req = payload[:request]
     Rails.logger.info "Rack::Attack #{req.ip} foi bloqueado"
   end
+
+  Rack::Attack.cache.store = ActiveSupport::Cache::RedisCacheStore.new(
+    url: ENV.fetch("REDIS_URL") { "redis://127.0.0.1:6379/1" }
+  )
+
 end
 
   
