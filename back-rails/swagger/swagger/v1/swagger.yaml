@@ -1,0 +1,72 @@
+---
+openapi: 3.0.1
+info:
+  title: API V1
+  version: v1
+paths:
+  "/login":
+    post:
+      summary: Realiza login de usuário
+      tags:
+      - Autenticação
+      parameters: []
+      responses:
+        '200':
+          description: Sucesso
+        '401':
+          description: Não autorizado (credenciais inválidas)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+              required:
+              - email
+              - password
+  "/signup":
+    post:
+      summary: Cria novo usuário
+      tags:
+      - Usuários
+      parameters: []
+      responses:
+        '201':
+          description: Usuário criado com sucesso
+        '422':
+          description: Erros de validação
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: object
+                  properties:
+                    email:
+                      type: string
+                      example: teste@example.com
+                    password:
+                      type: string
+                      example: Pass@123
+                    password_confirmation:
+                      type: string
+                      example: Pass@123
+                    full_name:
+                      type: string
+                      example: Teste da Silva
+                  required:
+                  - email
+                  - password
+                  - password_confirmation
+                  - full_name
+servers:
+- url: https://{defaultHost}
+  variables:
+    defaultHost:
+      default: www.example.com

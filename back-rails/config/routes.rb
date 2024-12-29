@@ -1,4 +1,10 @@
 Rails.application.routes.draw do
+
+  if Rails.env.development? || Rails.env.test?
+    mount Rswag::Ui::Engine => '/api-docs'
+    mount Rswag::Api::Engine => '/api-docs'
+  end
+  
   # Rotas para Posts
   resources :posts, only: [:index, :create, :update, :destroy] do
     resources :comments, only: [:index, :create]
