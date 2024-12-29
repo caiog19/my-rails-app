@@ -28,6 +28,7 @@ gem 'dotenv-rails', groups: [:development, :test]
 gem 'sendgrid-ruby'
 gem 'pg'
 gem 'rack-attack'
+gem 'redis'
 
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
