@@ -1,3 +1,4 @@
+# app/controllers/auth_controller.rb
 class AuthController < ApplicationController
   before_action :authorize_request
 
@@ -7,27 +8,32 @@ class AuthController < ApplicationController
 
   def update_profile
     user = @current_user
-
     errors = []
 
-    if user_params[:full_name]
-      unless user.authenticate(user_params[:current_password_full_name])
+    # Se veio full_name para atualizar
+    if user_params[:full_name].present?
+      unless user.authenticate(user_params[:current_password])
         errors << "Senha atual para atualizar o nome está incorreta."
       end
+
       user.full_name = user_params[:full_name]
     end
 
-    if user_params[:email]
-      unless user.authenticate(user_params[:current_password_email])
+    # Se veio email para atualizar
+    if user_params[:email].present?
+      unless user.authenticate(user_params[:current_password])
         errors << "Senha atual para atualizar o email está incorreta."
       end
+
       user.email = user_params[:email]
     end
 
-    if user_params[:password]
-      unless user.authenticate(user_params[:current_password_password])
+    # Se veio password para atualizar
+    if user_params[:password].present?
+      unless user.authenticate(user_params[:current_password])
         errors << "Senha atual para atualizar a senha está incorreta."
       end
+
       user.password = user_params[:password]
       user.password_confirmation = user_params[:password_confirmation]
     end
@@ -42,18 +48,16 @@ class AuthController < ApplicationController
       render json: { errors: errors }, status: :unprocessable_entity
     end
   end
-  
+
   private
 
   def user_params
     params.require(:user).permit(
-      :full_name, 
-      :email, 
-      :password, 
+      :full_name,
+      :email,
+      :password,
       :password_confirmation,
-      :current_password_full_name, 
-      :current_password_email, 
-      :current_password_password
+      :current_password
     )
   end
 end
