@@ -18,6 +18,8 @@ class SessionsController < ApplicationController
         render json: { token: token, message: "Login realizado com sucesso!" }, status: :ok
       else
         user.increment!(:failed_attempts)
+        Rails.logger.info "DEBUG => user.failed_attempts: #{user.failed_attempts}"
+
         if user.failed_attempts >= 5
           user.lock!
           render json: { errors: ["Conta bloqueada devido a muitas tentativas. Aguarde 30 minutos ou contacte o suporte."] }, status: :unauthorized
