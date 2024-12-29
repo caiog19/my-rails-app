@@ -135,6 +135,8 @@
     <div class="edit-profile-form">
       <h3>Editar Cadastro</h3>
 
+      <div v-if="isAdmin || post.user_id === currentUser.id" class="info">Você é um admin, e não pode editar o seu cadastro</div>
+
       <EditableField
         ref="editableFullName"
         label="Nome Completo"
@@ -143,6 +145,7 @@
         field="full_name"
         type="text"
         required
+        :is-admin="isAdmin"
         @save="handleSave"
       />
 
@@ -154,6 +157,7 @@
         field="email"
         type="email"
         required
+        :is-admin="isAdmin"
         @save="handleSave"
       />
 
@@ -166,6 +170,7 @@
         type="password"
         placeholder="Nova Senha"
         required
+        :is-admin="isAdmin"
         @save="handleSave"
       />
     </div>

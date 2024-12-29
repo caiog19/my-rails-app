@@ -59,4 +59,14 @@ Rails.application.configure do
   # Configurações de ActiveRecord
   config.active_record.dump_schema_after_migration = false
   config.active_record.verbose_query_logs = false
+
+  #rack-attack
+
+  config.middleware.use Rack::Attack
+
+  Rails.application.configure do
+    config.action_dispatch.trusted_proxies = 
+      [IPAddr.new('0.0.0.0/0'), IPAddr.new('::/0')]
+  end
+
 end
