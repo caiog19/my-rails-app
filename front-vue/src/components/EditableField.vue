@@ -3,7 +3,13 @@
     <label :for="id">{{ label }}:</label>
     <div v-if="!isEditing" class="display-mode">
       <span>{{ displayValue }}</span>
-      <button @click="enableEdit" class="alterar-button">Alterar</button>
+      <button 
+        v-if="!isAdmin" 
+        @click="enableEdit" 
+        class="alterar-button"
+      >
+        Alterar
+      </button>
     </div>
     <div v-else class="edit-mode">
       <template v-if="field === 'password'">
@@ -54,10 +60,21 @@
       </template>
 
       <div class="action-buttons">
-        <button @click="save" class="salvar-button" :disabled="isLoading">
+        <button 
+          v-if="!isAdmin" 
+          @click="save" 
+          class="salvar-button" 
+          :disabled="isLoading"
+        >
           {{ isLoading ? 'Salvando...' : 'Salvar' }}
         </button>
-        <button @click="cancel" class="cancelar-button">Cancelar</button>
+        <button 
+          v-if="!isAdmin" 
+          @click="cancel" 
+          class="cancelar-button"
+        >
+          Cancelar
+        </button>
       </div>
 
       <div v-if="errors.length" class="error-messages">
@@ -98,6 +115,10 @@ export default {
       default: '',
     },
     required: {
+      type: Boolean,
+      default: false,
+    },
+    isAdmin: { 
       type: Boolean,
       default: false,
     },
@@ -142,6 +163,9 @@ export default {
     },
 
     async save() {
+      if (this.isAdmin) { 
+        return;
+      }
       this.isLoading = true;
       this.errors = [];
       let payload = {
