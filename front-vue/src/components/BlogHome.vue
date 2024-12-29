@@ -9,15 +9,12 @@
         <p><small>Publicado por: {{ post.user_full_name }}</small></p>
         <p>{{ post.content }}</p>
 
-      <!-- Exibição de tags -->
-      <div v-if="post.tags && post.tags.length">
-        <p><strong>Tags:</strong></p>
-        <ul>
-          <li v-for="tag in post.tags" :key="tag.id">{{ tag.name }}</li>
-        </ul>
-      </div>
-
-        <!-- Botões de edição e exclusão -->
+        <div v-if="post.tags && post.tags.length">
+          <p><strong>Tags:</strong></p>
+          <ul>
+            <li v-for="tag in post.tags" :key="tag.id">{{ tag.name }}</li>
+          </ul>
+        </div>
 
         <div v-if="currentUser && post.user_id === currentUser.id">
           <button @click="startEditPost(post)" class="edit-button">Editar</button>
@@ -26,8 +23,6 @@
           <button @click="deletePost(post.id)" class="delete-button">Excluir</button>
         </div>
 
-
-        <!-- Formulário de edição específico para o post -->
         <div v-if="isEditing && editingPostId === post.id" class="post-form">
           <h3>Editar Post</h3>
           <form @submit.prevent="updatePost">
@@ -43,7 +38,7 @@
             <button type="button" @click="cancelEdit" class="cancel-button">Cancelar</button>
           </form>
         </div>
-        <!-- Comentários -->
+
         <div class="comments-section">
           <h4>Comentários</h4>
           <ul v-if="post.comments && post.comments.length">
@@ -53,7 +48,6 @@
           </ul>
           <p v-else>Não há comentários ainda.</p>
 
-          <!-- Adicionar comentário -->
           <form @submit.prevent="addComment(post.id)">
             <textarea v-model="newComments[post.id]" placeholder="Escreva um comentário..."></textarea>
             <button type="submit">Comentar</button>
@@ -94,7 +88,7 @@ export default {
       isEditing: false,
       editingPostId: null,
       editingPost: {},
-      newComments: {}, 
+      newComments: {},
     };
   },
   async created() {
@@ -142,7 +136,9 @@ export default {
     },
     async fetchComments(postId) {
       try {
-        const response = await api.get(`/posts/${postId}/comments`);
+        const token = localStorage.getItem('token');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const response = await api.get(`/posts/${postId}/comments`, { headers });
         return response.data;
       } catch (error) {
         console.error(`Erro ao buscar comentários para o post ${postId}:`, error);
@@ -174,39 +170,36 @@ export default {
       }
     },
     startEditPost(post) {
-  if (post.user_id !== this.currentUser.id) {
-    alert('Você só pode editar seus próprios posts.');
-    return;
-  }
-  this.isEditing = true;
-  this.editingPostId = post.id;
-  this.editingPost = { ...post }; // Cópia do post a ser editado
-},
+      if (post.user_id !== this.currentUser.id) {
+        alert('Você só pode editar seus próprios posts.');
+        return;
+      }
+      this.isEditing = true;
+      this.editingPostId = post.id;
+      this.editingPost = { ...post }; 
+    },
+    async updatePost() {
+      try {
+        const token = localStorage.getItem('token');
+        await api.put(`/posts/${this.editingPostId}`, this.editingPost, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-  async updatePost() {
-  try {
-    const token = localStorage.getItem('token');
-    await api.put(`/posts/${this.editingPostId}`, this.editingPost, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    alert('Post atualizado com sucesso!');
-    this.isEditing = false;
-    this.editingPostId = null;
-    this.editingPost = {}; 
-    await this.fetchPosts(this.currentPage);
-  } catch (error) {
-    console.error('Erro ao atualizar post:', error);
-    alert('Não foi possível atualizar o post.');
-  }
-},
-
-  cancelEdit() {
-    this.isEditing = false;
-    this.editingPostId = null;
-    this.editingPost = {};
-  },
-
+        alert('Post atualizado com sucesso!');
+        this.isEditing = false;
+        this.editingPostId = null;
+        this.editingPost = {};
+        await this.fetchPosts(this.currentPage);
+      } catch (error) {
+        console.error('Erro ao atualizar post:', error);
+        alert('Não foi possível atualizar o post.');
+      }
+    },
+    cancelEdit() {
+      this.isEditing = false;
+      this.editingPostId = null;
+      this.editingPost = {};
+    },
     async deletePost(postId) {
       if (!confirm('Tem certeza de que deseja excluir este post?')) return;
       try {
@@ -224,7 +217,6 @@ export default {
         } else {
           await this.fetchPosts(this.currentPage);
         }
-
       } catch (error) {
         console.error('Erro ao excluir post:', error);
         alert('Não foi possível excluir o post.');
