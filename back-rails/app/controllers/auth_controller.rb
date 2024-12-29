@@ -1,4 +1,3 @@
-# app/controllers/auth_controller.rb
 class AuthController < ApplicationController
   before_action :authorize_request
 
