@@ -47,4 +47,6 @@ Rails.application.routes.draw do
 
   get 'translations/:locale', to: 'translations#show'
 
+  resources :file_uploads, only: [:create]
+  
 end

@@ -12,6 +12,8 @@ module BackRails
     config.i18n.available_locales = [:en, :pt]
     config.autoload_lib(ignore: %w[assets tasks])
     config.middleware.use Rack::Attack
+    config.active_job.queue_adapter = :sidekiq
+
   end
 end
 
