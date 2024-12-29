@@ -52,12 +52,14 @@
           />
         </div>
       </template>
+
       <div class="action-buttons">
         <button @click="save" class="salvar-button" :disabled="isLoading">
           {{ isLoading ? 'Salvando...' : 'Salvar' }}
         </button>
         <button @click="cancel" class="cancelar-button">Cancelar</button>
       </div>
+
       <div v-if="errors.length" class="error-messages">
         <ul>
           <li v-for="error in errors" :key="error">{{ error }}</li>
@@ -103,7 +105,7 @@ export default {
   data() {
     return {
       isEditing: false,
-      editableValue: this.value,
+      editableValue: this.value,   
       currentPassword: '',
       passwordConfirmation: '',
       errors: [],
@@ -112,6 +114,7 @@ export default {
   },
   computed: {
     displayValue() {
+      
       if (this.field === 'password') {
         return '********';
       }
@@ -119,6 +122,7 @@ export default {
     },
   },
   watch: {
+   
     value(newVal) {
       if (!this.isEditing) {
         this.editableValue = newVal;
@@ -136,31 +140,34 @@ export default {
       this.passwordConfirmation = '';
       this.errors = [];
     },
+
     async save() {
       this.isLoading = true;
       this.errors = [];
-
-      // Preparar os dados a serem enviados
       let payload = {
         user: {},
       };
 
-      payload.user[this.field] = this.editableValue;
-      payload.user[`current_password_${this.field}`] = this.currentPassword;
-
       if (this.field === 'password') {
+        payload.user.password = this.editableValue;
         payload.user.password_confirmation = this.passwordConfirmation;
+        payload.user.current_password = this.currentPassword;
+      } else {
+        payload.user[this.field] = this.editableValue;
+        payload.user.current_password = this.currentPassword;
       }
 
-      // Emitir evento para o componente pai com os dados
-      this.$emit('save', payload);
-
-      // Aguardar um curto período para garantir que o pai processe a atualização
-      // (Opcional: pode ser ajustado conforme necessário)
-      await this.$nextTick();
-
-      this.isLoading = false;
+      try {
+        await this.$emit('save', payload);
+        this.closeEditing();
+      } catch (error) {
+        console.error('Erro ao salvar:', error);
+        this.errors.push('Não foi possível salvar os dados.');
+      } finally {
+        this.isLoading = false;
+      }
     },
+
     closeEditing() {
       this.isEditing = false;
       this.editableValue = this.value;
@@ -214,7 +221,7 @@ export default {
 .password-field,
 .standard-fields input {
   flex: 1;
-  min-width: 200px; /* Ajuste conforme necessário */
+  min-width: 200px;
 }
 
 .action-buttons {

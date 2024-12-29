@@ -2,58 +2,98 @@
   <div>
     <h2>Meus Posts</h2>
 
-    <!-- Botão para Logout -->
     <button @click="logout" class="logout-button">Logout</button>
 
-    <!-- Formulário para criar ou editar posts -->
-<!-- Formulário para criar ou editar posts -->
-<div class="post-form">
-  <h3>{{ isEditingPost ? 'Editar Post' : 'Criar Novo Post' }}</h3>
-  <form @submit.prevent="isEditingPost ? updatePost() : submitPost()">
-    <div>
-      <label for="title">Título:</label>
-      <input v-model="post.title" id="title" type="text" required />
+    <div class="tag-form">
+      <h3>Criar Nova Tag</h3>
+      <form @submit.prevent="createTag">
+        <input
+          v-model="newTagName"
+          type="text"
+          placeholder="Nome da Tag"
+          required
+        />
+        <button type="submit">Criar Tag</button>
+      </form>
     </div>
-    <div>
-      <label for="content">Conteúdo:</label>
-      <textarea v-model="post.content" id="content" required></textarea>
-    </div>
-    <div>
-      <label for="tags">Tags:</label>
-      <select id="tags" v-model="post.tag_ids" multiple>
-        <option v-for="tag in tags" :key="tag.id" :value="tag.id">{{ tag.name }}</option>
-      </select>
-    </div>
-    <button type="submit">{{ isEditingPost ? 'Salvar Alterações' : 'Publicar Post' }}</button>
-    <button type="button" v-if="isEditingPost" @click="cancelEditPost" class="cancel-button">Cancelar</button>
-  </form>
-</div>
 
+    <div class="post-form">
+      <h3>{{ isEditingPost ? 'Editar Post' : 'Criar Novo Post' }}</h3>
+      <form @submit.prevent="isEditingPost ? updatePost() : submitPost()">
+        <div>
+          <label for="title">Título:</label>
+          <input v-model="post.title" id="title" type="text" required />
+        </div>
+        <div>
+          <label for="content">Conteúdo:</label>
+          <textarea v-model="post.content" id="content" required></textarea>
+        </div>
 
-    <!-- Lista de usuários para administradores -->
+        <div>
+          <label for="tags">Tags:</label>
+          <select id="tags" v-model="post.tag_ids" multiple>
+            <option v-for="tag in tags" :key="tag.id" :value="tag.id">
+              {{ tag.name }}
+            </option>
+          </select>
+          <p>Tags selecionadas: {{ post.tag_ids }}</p>
+        </div>
+
+        <button type="submit">
+          {{ isEditingPost ? 'Salvar Alterações' : 'Publicar Post' }}
+        </button>
+        <button
+          type="button"
+          v-if="isEditingPost"
+          @click="cancelEditPost"
+          class="cancel-button"
+        >
+          Cancelar
+        </button>
+      </form>
+    </div>
+
     <div v-if="isAdmin" class="admin-section">
       <h3>Lista de Usuários</h3>
       <ul v-if="users && users.length">
         <li v-for="user in users" :key="user.id">
           <p>{{ user.full_name }} - {{ user.email }}</p>
-          <button @click="deleteUser(user.id)" class="delete-button">Excluir Usuário</button>
+          <button @click="deleteUser(user.id)" class="delete-button">
+            Excluir Usuário
+          </button>
         </li>
       </ul>
       <p v-else>Não há usuários cadastrados.</p>
 
-      <!-- Controles de paginação para usuários -->
       <div v-if="users && users.length" class="pagination">
-        <button @click="fetchUsers(currentPageUsers - 1)" :disabled="currentPageUsers === 1">Anterior</button>
+        <button
+          @click="fetchUsers(currentPageUsers - 1)"
+          :disabled="currentPageUsers === 1"
+        >
+          Anterior
+        </button>
         <span>Página {{ currentPageUsers }} de {{ totalPagesUsers }}</span>
-        <button @click="fetchUsers(currentPageUsers + 1)" :disabled="currentPageUsers === totalPagesUsers">Próximo</button>
+        <button
+          @click="fetchUsers(currentPageUsers + 1)"
+          :disabled="currentPageUsers === totalPagesUsers"
+        >
+          Próximo
+        </button>
       </div>
     </div>
 
-    <!-- Lista de posts -->
     <ul v-if="posts && posts.length">
       <li v-for="post in posts" :key="post.id">
         <h3>{{ post.title }}</h3>
         <p>{{ post.content }}</p>
+
+        <div v-if="post.tags && post.tags.length">
+          <strong>Tags:</strong>
+          <ul>
+            <li v-for="tag in post.tags" :key="tag.id">{{ tag.name }}</li>
+          </ul>
+        </div>
+
         <div class="post-actions">
           <button
             v-if="isAdmin || post.user_id === currentUser.id"
@@ -74,20 +114,27 @@
     </ul>
     <p v-else>Você ainda não publicou nenhum post.</p>
 
-    <!-- Controles de paginação para posts -->
     <div v-if="posts && posts.length" class="pagination">
-      <button @click="fetchPosts(currentPagePosts - 1)" :disabled="currentPagePosts === 1">Anterior</button>
+      <button
+        @click="fetchPosts(currentPagePosts - 1)"
+        :disabled="currentPagePosts === 1"
+      >
+        Anterior
+      </button>
       <span>Página {{ currentPagePosts }} de {{ totalPagesPosts }}</span>
-      <button @click="fetchPosts(currentPagePosts + 1)" :disabled="currentPagePosts === totalPagesPosts">Próximo</button>
+      <button
+        @click="fetchPosts(currentPagePosts + 1)"
+        :disabled="currentPagePosts === totalPagesPosts"
+      >
+        Próximo
+      </button>
     </div>
 
     <div v-if="loading" class="loading-indicator">Carregando...</div>
 
-    <!-- Formulário para editar o cadastro -->
     <div class="edit-profile-form">
       <h3>Editar Cadastro</h3>
-      
-      <!-- Nome Completo -->
+
       <EditableField
         ref="editableFullName"
         label="Nome Completo"
@@ -99,7 +146,6 @@
         @save="handleSave"
       />
 
-      <!-- Email -->
       <EditableField
         ref="editableEmail"
         label="Email"
@@ -111,7 +157,6 @@
         @save="handleSave"
       />
 
-      <!-- Senha -->
       <EditableField
         ref="editablePassword"
         label="Nova Senha"
@@ -131,7 +176,7 @@
 import api from '../services/api';
 import { eventBus } from '../eventBus';
 import './BlogComponents.css';
-import EditableField from './EditableField.vue'; // Importa o componente auxiliar
+import EditableField from './EditableField.vue';
 
 export default {
   name: 'UserPosts',
@@ -143,18 +188,23 @@ export default {
       posts: [],
       users: [],
       tags: [],
+
       post: {
         id: null,
         title: '',
         content: '',
         tag_ids: [],
       },
+
+      newTagName: '',
+
       profile: {
         full_name: '',
         email: '',
         password: '',
         password_confirmation: '',
       },
+
       currentUser: {},
       isEditingPost: false,
       currentPageUsers: 1,
@@ -163,72 +213,26 @@ export default {
       totalPagesPosts: 1,
       isAdmin: false,
       loading: false,
+
       formErrors: {
         full_name: [],
         email: [],
         password: [],
       },
-      passwordPlaceholder: '********', // Para esconder a senha no frontend
+
+      passwordPlaceholder: '********',
     };
   },
   async created() {
-  await this.fetchCurrentUser();
-  await this.fetchTags(); 
-  await this.fetchPosts();
-  if (this.isAdmin) {
-    await this.fetchUsers();
-  }
-},
-  methods: {
-    async fetchTags() {
-    try {
-      const response = await api.get('/tags', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
-      this.tags = response.data;
-    } catch (error) {
-      console.error('Erro ao buscar tags:', error);
+    await this.fetchCurrentUser();
+    await this.fetchTags();
+    await this.fetchPosts();
+
+    if (this.isAdmin) {
+      await this.fetchUsers();
     }
   },
-    loadProfile() {
-      this.profile.full_name = this.currentUser.full_name || '';
-      this.profile.email = this.currentUser.email || '';
-    },
-    // Método para lidar com a atualização de campos individuais
-    async handleSave(payload) {
-      try {
-        await api.put('/auth/update-profile', payload, { // Enviar o payload completo com a chave 'user'
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
-        alert('Perfil atualizado com sucesso!');
-        await this.fetchCurrentUser();
-        this.loadProfile();
-
-        // Determinar qual campo foi atualizado para fechar o campo de edição correspondente
-        const updatedField = Object.keys(payload.user)[0];
-        // Mapeamento de campos para refs
-        const fieldRefMap = {
-          full_name: 'editableFullName',
-          email: 'editableEmail',
-          password: 'editablePassword',
-        };
-        const refName = fieldRefMap[updatedField];
-        if (refName && this.$refs[refName]) {
-          this.$refs[refName].closeEditing();
-        }
-      } catch (error) {
-        console.error(`Erro ao atualizar campo:`, error);
-        if (error.response && error.response.data && error.response.data.errors) {
-          // Exibe erros específicos no frontend
-          alert(`Erro(s) ao atualizar campo:\n${error.response.data.errors.join('\n')}`);
-        } else {
-          alert('Não foi possível atualizar campo.');
-        }
-      }
-    },
-    // Métodos de gerenciamento de posts
+  methods: {
     async fetchCurrentUser() {
       const token = localStorage.getItem('token');
       try {
@@ -237,12 +241,18 @@ export default {
         });
         this.currentUser = response.data.user;
         this.isAdmin = this.currentUser.admin;
+        this.loadProfile();
       } catch (error) {
         console.error('Erro ao buscar informações do usuário:', error);
         this.currentUser = {};
         this.isAdmin = false;
       }
     },
+    loadProfile() {
+      this.profile.full_name = this.currentUser.full_name || '';
+      this.profile.email = this.currentUser.email || '';
+    },
+
     async fetchUsers(page = 1) {
       this.loading = true;
       try {
@@ -257,10 +267,55 @@ export default {
         this.loading = false;
       }
     },
+
+    async fetchTags() {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await api.get('/tags', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        this.tags = response.data;
+      } catch (error) {
+        console.error('Erro ao buscar tags:', error);
+      }
+    },
+
+    async createTag() {
+      if (!this.newTagName.trim()) {
+        alert('O nome da tag não pode estar vazio.');
+        return;
+      }
+      try {
+        const token = localStorage.getItem('token');
+        const response = await api.post(
+          '/tags',
+          { tag: { name: this.newTagName } },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        this.tags.push(response.data);
+        this.newTagName = '';
+        alert('Tag criada com sucesso!');
+      } catch (error) {
+        console.error('Erro ao criar tag:', error);
+        alert(
+          'Não foi possível criar a tag. Verifique se ela já existe ou tente novamente.'
+        );
+      }
+    },
+
     async fetchPosts(page = 1) {
       this.loading = true;
       try {
-        const response = await api.get('/meus-posts', { params: { page } });
+        const token = localStorage.getItem('token');
+        const response = await api.get('/meus-posts', {
+          params: { page },
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
         this.posts = response.data.posts || [];
         this.currentPagePosts = response.data.meta.current_page || 1;
         this.totalPagesPosts = response.data.meta.total_pages || 1;
@@ -271,43 +326,40 @@ export default {
         this.loading = false;
       }
     },
-    async deleteUser(userId) {
-      if (!confirm('Tem certeza de que deseja excluir este usuário?')) return;
+
+    async handleSave(payload) {
       try {
         const token = localStorage.getItem('token');
-        await api.delete(`/users/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (this.users.length === 1 && this.currentPageUsers > 1) {
-          this.currentPageUsers--;
-        }
-        await this.fetchUsers(this.currentPageUsers);
-        alert('Usuário excluído com sucesso!');
+        await api.put(
+          '/auth/update-profile',
+          { user: payload.user },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        
+        alert('Perfil atualizado com sucesso!');
+        await this.fetchCurrentUser();
+        this.loadProfile();
       } catch (error) {
-        console.error('Erro ao excluir usuário:', error);
-        alert('Não foi possível excluir o usuário.');
-      }
-    },
-    async deletePost(postId) {
-      if (!confirm('Tem certeza de que deseja excluir este post?')) return;
-      try {
-        const token = localStorage.getItem('token');
-        await api.delete(`/posts/${postId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (this.posts.length === 1 && this.currentPagePosts > 1) {
-          this.currentPagePosts--;
+        console.error('Erro ao salvar:', error);
+        if (error.response?.data?.errors) {
+          alert(`Erro: ${error.response.data.errors.join('\n')}`);
+        } else {
+          alert('Erro ao salvar os dados.');
         }
-        await this.fetchPosts(this.currentPagePosts);
-        alert('Post excluído com sucesso!');
-      } catch (error) {
-        console.error('Erro ao excluir post:', error);
-        alert('Não foi possível excluir o post.');
       }
     },
 
     editPost(post) {
       this.post = { ...post };
+      if (!this.post.tag_ids) {
+        this.post.tag_ids = [];
+      }
+      if (post.tags) {
+        this.post.tag_ids = post.tags.map((t) => t.id);
+      }
+
       this.isEditingPost = true;
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
@@ -334,14 +386,15 @@ export default {
       }
     },
     async submitPost() {
+      console.log('DEBUG post antes de enviar:', this.post);
       if (!this.post.title || !this.post.content) {
         alert('Título e conteúdo são obrigatórios.');
         return;
       }
       try {
-        await api.post('/posts', {
-          title: this.post.title,
-          content: this.post.content,
+        const token = localStorage.getItem('token');
+        await api.post('/posts', { post: this.post }, {
+          headers: { Authorization: `Bearer ${token}` },
         });
         alert('Post publicado com sucesso!');
         this.resetForm();
@@ -351,6 +404,42 @@ export default {
         alert('Não foi possível salvar o post. Verifique os dados e tente novamente.');
       }
     },
+
+    async deletePost(postId) {
+      if (!confirm('Tem certeza de que deseja excluir este post?')) return;
+      try {
+        const token = localStorage.getItem('token');
+        await api.delete(`/posts/${postId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (this.posts.length === 1 && this.currentPagePosts > 1) {
+          this.currentPagePosts--;
+        }
+        await this.fetchPosts(this.currentPagePosts);
+        alert('Post excluído com sucesso!');
+      } catch (error) {
+        console.error('Erro ao excluir post:', error);
+        alert('Não foi possível excluir o post.');
+      }
+    },
+    async deleteUser(userId) {
+      if (!confirm('Tem certeza de que deseja excluir este usuário?')) return;
+      try {
+        const token = localStorage.getItem('token');
+        await api.delete(`/users/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (this.users.length === 1 && this.currentPageUsers > 1) {
+          this.currentPageUsers--;
+        }
+        await this.fetchUsers(this.currentPageUsers);
+        alert('Usuário excluído com sucesso!');
+      } catch (error) {
+        console.error('Erro ao excluir usuário:', error);
+        alert('Não foi possível excluir o usuário.');
+      }
+    },
+
     resetForm() {
       this.post = {
         id: null,
@@ -360,6 +449,7 @@ export default {
       };
       this.isEditingPost = false;
     },
+
     logout() {
       localStorage.removeItem('token');
       eventBus.updateAuthentication(false);
@@ -373,3 +463,49 @@ export default {
 };
 </script>
 
+<style>
+.logout-button {
+  margin-bottom: 20px;
+}
+.post-form {
+  margin-bottom: 40px;
+}
+.tag-form {
+  margin-bottom: 30px;
+}
+.cancel-button {
+  margin-left: 10px;
+  background-color: #f44336;
+  color: white;
+}
+.cancel-button:hover {
+  background-color: #d32f2f;
+}
+.delete-button {
+  background-color: #f44336;
+  color: white;
+  margin-left: 10px;
+}
+.delete-button:hover {
+  background-color: #d32f2f;
+}
+.edit-button {
+  background-color: #2196f3;
+  color: white;
+}
+.edit-button:hover {
+  background-color: #1976d2;
+}
+.loading-indicator {
+  margin-top: 20px;
+  font-weight: bold;
+}
+.pagination {
+  margin-top: 20px;
+}
+.edit-profile-form {
+  margin-top: 40px;
+  border-top: 1px solid #ccc;
+  padding-top: 20px;
+}
+</style>
