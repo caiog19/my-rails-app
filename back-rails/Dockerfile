@@ -82,9 +82,9 @@
     # Pré-compilar os assets para produção
     RUN test "$SKIP_ASSETS" = "true" || SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
     
-    # [Opcional] Gerar a documentação Swagger apenas quando o container estiver rodando
-    # RUN BUNDLE_WITHOUT="development" RAILS_ENV=test ./bin/rails db:create db:migrate && \
-    #     ./bin/rails rswag:specs:swaggerize
+    
+#     RUN BUNDLE_WITHOUT="development" RAILS_ENV=test ./bin/rails db:create db:migrate && \
+   #      ./bin/rails rswag:specs:swaggerize
     
     # -------------------------------
     # Estágio final

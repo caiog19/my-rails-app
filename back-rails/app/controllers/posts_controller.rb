@@ -5,12 +5,13 @@ class PostsController < ApplicationController
   # Exibir todos os posts (Home)
   def index
     if params[:query].present?
-      query = "%#{params[:query]}%"
+      query = params[:query]
       @posts = Post.joins(:user)
                    .includes(:tags)
                    .select('posts.*, users.full_name as user_full_name')
-                   .where("posts.title LIKE :query OR posts.content LIKE :query", query: query)
-                   .order(created_at: :desc)
+                   .where("posts.title % :query OR posts.content % :query OR tags.name % :query", query: query)
+                   .references(:tags)
+                   .order(Arel.sql("similarity(posts.title, '#{query}') DESC"))
     else
       @posts = Post.joins(:user)
                    .includes(:tags)
@@ -27,7 +28,7 @@ class PostsController < ApplicationController
       }
     }
   end
-
+  
   # Meus Posts (do usuário autenticado)
   def meus_posts
     @posts = Post.where(user_id: @current_user.id).includes(:tags).order(created_at: :desc)

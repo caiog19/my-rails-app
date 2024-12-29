@@ -2,6 +2,13 @@
   <div class="home-container">
     <h1>Posts Recentes</h1>
 
+    <div class="search-container">
+      <input v-model="searchQuery"  type="text" placeholder="Busque por título, conteúdo ou tag..."
+        class="search-input" />
+    </div>
+
+
+
     <ul class="post-list" v-if="posts.length">
       <li class="post-item" v-for="post in posts" :key="post.id">
         <h3>{{ post.title }}</h3>
@@ -78,6 +85,7 @@
 <script>
 import api from '../services/api';
 import '../styles/BlogHome.css';
+import _ from 'lodash'; 
 
 export default {
   name: 'BlogHome',
@@ -93,6 +101,7 @@ export default {
       editingPostId: null,
       editingPost: {},
       newComments: {},
+      searchQuery: '',
     };
   },
   async created() {
@@ -119,10 +128,14 @@ export default {
         this.isAdmin = false;
       }
     },
-    async fetchPosts(page) {
+    async search() {
+      await this.fetchPosts(1, this.searchQuery);
+    },
+
+    async fetchPosts(page, searchQuery = '') {
       this.loading = true;
       try {
-        const response = await api.get('/posts', { params: { page } });
+        const response = await api.get('/posts', { params: { page, query: searchQuery || this.searchQuery } });
         const postsWithComments = await Promise.all(
           response.data.posts.map(async (post) => {
             const comments = await this.fetchComments(post.id);
@@ -138,6 +151,7 @@ export default {
         this.loading = false;
       }
     },
+
     async fetchComments(postId) {
       try {
         const token = localStorage.getItem('token');
@@ -226,6 +240,18 @@ export default {
         alert('Não foi possível excluir o post.');
       }
     },
+    debounceSearch: _.debounce(function (query) {
+      this.fetchPosts(1, query);
+    }, 300), 
+  },
+  watch: {
+    searchQuery: {
+      handler(newQuery) {
+        this.debounceSearch(newQuery);
+      },
+      immediate: true,
+    },
   },
 };
 </script>
+
