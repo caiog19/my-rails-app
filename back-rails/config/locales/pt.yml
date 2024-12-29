@@ -1,4 +1,14 @@
 pt:
+  posts:
+    title: "Título"
+    content: "Conteúdo"
+    not_found: "Post não encontrado"
+    unauthorized: "Você não tem permissão para realizar esta ação"
+    updated: "Post atualizado com sucesso"
+    deleted: "Post excluído com sucesso"
+    created: "Post criado com sucesso"
+  errors:
+    forbidden: "Você não tem permissão para excluir este post"
   activerecord:
     models:
       user: "Usuário"
@@ -26,3 +36,10 @@ pt:
               confirmation: "não coincide com a confirmação"
             password_confirmation:
               blank: "não pode estar em branco"
+    errors:
+      token_invalid_or_absent: "Token inválido ou ausente"
+      user_not_found: "Usuário não encontrado"
+      access_denied: "Acesso negado"
+    errors:
+      no_permission_to_edit_post: "You do not have permission to edit this post."
+      no_permission_to_delete_post: "You do not have permission to delete this post."

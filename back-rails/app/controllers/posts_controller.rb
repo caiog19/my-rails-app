@@ -9,7 +9,7 @@ class PostsController < ApplicationController
       @posts = Post.joins(:user)
                    .includes(:tags)
                    .select('posts.*, users.full_name as user_full_name')
-                   .where("posts.title % :query OR posts.content % :query OR tags.name % :query", query: query)
+                   .where("posts.title ILIKE :query OR posts.content ILIKE :query OR tags.name ILIKE :query", query: "%#{query}%")
                    .references(:tags)
                    .order(Arel.sql("similarity(posts.title, '#{query}') DESC"))
     else
@@ -54,32 +54,29 @@ class PostsController < ApplicationController
     end
   end
 
-#agora com tags
-
   # Atualizar um post existente
   def update
     if @current_user.admin? || @post.user_id == @current_user.id
       if @post.update(post_params)
-        render json: { message: "Post atualizado", post: @post.as_json(include: :tags) }, status: :ok
+        render json: { message: I18n.t('posts.updated'), post: @post.as_json(include: :tags) }, status: :ok
       else
         render json: { errors: @post.errors.full_messages }, status: :unprocessable_entity
       end
     else
-      render json: { errors: ["Você não tem permissão para editar este post."] }, status: :forbidden
+      render json: { errors: [I18n.t('errors.no_permission_to_edit_post')] }, status: :forbidden
     end
   end
 
   # Excluir um post
-
   def destroy
     if @current_user.admin? || @post.user_id == @current_user.id
       if @post.destroy
-        render json: { message: 'Post excluído com sucesso' }, status: :ok
+        render json: { message: I18n.t('posts.deleted') }, status: :ok
       else
         render json: { errors: @post.errors.full_messages }, status: :unprocessable_entity
       end
     else
-      render json: { error: 'Você não tem permissão para excluir este post' }, status: :forbidden
+      render json: { error: I18n.t('errors.no_permission_to_delete_post') }, status: :forbidden
     end
   end
 
@@ -101,7 +98,7 @@ class PostsController < ApplicationController
   def set_post
     @post = Post.find(params[:id])
   rescue ActiveRecord::RecordNotFound
-    render json: { error: 'Post não encontrado' }, status: :not_found
+    render json: { error: I18n.t('posts.not_found') }, status: :not_found
   end
 
   def post_params
