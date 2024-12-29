@@ -47,7 +47,7 @@ class PostsController < ApplicationController
     @post = Post.new(post_params)
     @post.user_id = @current_user.id
     if @post.save
-      render json: post_with_tags, status: :created 
+      render json: @post.as_json(include: :tags), status: :created
     else
       render json: { errors: @post.errors.full_messages }, status: :unprocessable_entity
     end
@@ -59,7 +59,7 @@ class PostsController < ApplicationController
   def update
     if @current_user.admin? || @post.user_id == @current_user.id
       if @post.update(post_params)
-        render json: { message: "Post atualizado com sucesso!", post: post_with_tags }, status: :ok
+        render json: { message: "Post atualizado", post: @post.as_json(include: :tags) }, status: :ok
       else
         render json: { errors: @post.errors.full_messages }, status: :unprocessable_entity
       end
