@@ -72,6 +72,9 @@
     RUN dos2unix bin/* && \
         chmod +x bin/* && \
         sed -i 's/ruby.exe/ruby/' bin/*
+        
+    RUN bundle exec rails rswag:specs:swaggerize
+
     
     # Instalar dependências do Vite e construir os assets
     RUN npm install && npm run build
