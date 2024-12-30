@@ -1,4 +1,4 @@
-if Rails.env.development? || Rails.env.test?
+if Rails.env.development? || Rails.env.production?
   Rswag::Api.configure do |c|
 
 
