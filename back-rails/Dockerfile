@@ -24,7 +24,7 @@
     ENV RAILS_ENV="production" \
         BUNDLE_DEPLOYMENT="1" \
         BUNDLE_PATH="/usr/local/bundle" \
-        BUNDLE_WITHOUT="development"
+        BUNDLE_WITHOUT="development:test"
     
     # -------------------------------
     # Estágio de build
@@ -61,7 +61,7 @@
     
     # Copiar arquivos para instalar gems
     COPY Gemfile Gemfile.lock ./
-    RUN bundle install && \
+    RUN bundle install --with swagger && \
         rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
         bundle exec bootsnap precompile --gemfile
     
@@ -72,8 +72,25 @@
     RUN dos2unix bin/* && \
         chmod +x bin/* && \
         sed -i 's/ruby.exe/ruby/' bin/*
-        
-    RUN bundle exec rails rswag:specs:swaggerize
+    
+# Copiar arquivos para instalar gems
+    COPY Gemfile Gemfile.lock ./
+
+# Configurar Bundler para incluir o grupo :swagger
+    RUN bundle config set --local without 'development test' && \
+        bundle install --jobs 20 --retry 5 && \
+        rm -rf ~/.bundle/ "/usr/local/bundle"/ruby/*/cache "/usr/local/bundle"/ruby/*/bundler/gems/*/.git && \
+        bundle exec bootsnap precompile --gemfile
+
+    # Debug: Verificar gems instalados
+    RUN bundle show rswag-api || bundle info rswag-api
+    # Gerar documentação Swagger
+    RUN bundle exec rake rswag:specs:swaggerize || \
+        echo "Falha ao gerar Swagger, verificar logs."
+    # Debug: Verificar gems instalados
+    RUN find /usr/local/bundle -type d -name "*rswag*"
+
+
 
     
     # Instalar dependências do Vite e construir os assets
@@ -84,10 +101,6 @@
     
     # Pré-compilar os assets para produção
     RUN test "$SKIP_ASSETS" = "true" || SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
-    
-    
-#     RUN BUNDLE_WITHOUT="development" RAILS_ENV=test ./bin/rails db:create db:migrate && \
-   #      ./bin/rails rswag:specs:swaggerize
     
     # -------------------------------
     # Estágio final
