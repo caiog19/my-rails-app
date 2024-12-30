@@ -45,4 +45,8 @@ Rails.application.routes.draw do
   # Rotas para Tags
   resources :tags, only: [:index, :create, :destroy]
 
+  get 'translations/:locale', to: 'translations#show'
+
+  resources :file_uploads, only: [:create]
+  
 end

@@ -39,18 +39,10 @@ import '../src/styles/BlogApp.css';
 export default {
   name: 'App',
   setup() {
-    // Método de Logout
     const logout = () => {
-      // Remover o token de autenticação
       localStorage.removeItem('token');
-      
-      // Atualizar o estado de autenticação
       eventBus.isAuthenticated = false;
-      
-      // Redirecionar para a página de login
       window.location.href = '/login';
-      
-      // Opcional: Exibir uma mensagem de confirmação
       alert('Você foi deslogado com sucesso.');
     };
 

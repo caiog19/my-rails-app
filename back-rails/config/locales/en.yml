@@ -1,31 +1,45 @@
-# Files in the config/locales directory are used for internationalization and
-# are automatically loaded by Rails. If you want to use locales other than
-# English, add the necessary files in this directory.
-#
-# To use the locales, use `I18n.t`:
-#
-#     I18n.t "hello"
-#
-# In views, this is aliased to just `t`:
-#
-#     <%= t("hello") %>
-#
-# To use a different locale, set it with `I18n.locale`:
-#
-#     I18n.locale = :es
-#
-# This would use the information in config/locales/es.yml.
-#
-# To learn more about the API, please read the Rails Internationalization guide
-# at https://guides.rubyonrails.org/i18n.html.
-#
-# Be aware that YAML interprets the following case-insensitive strings as
-# booleans: `true`, `false`, `on`, `off`, `yes`, `no`. Therefore, these strings
-# must be quoted to be interpreted as strings. For example:
-#
-#     en:
-#       "yes": yup
-#       enabled: "ON"
-
 en:
-  hello: "Hello world"
+  posts:
+    title: "Title"
+    content: "Content"
+    not_found: "Post not found"
+    unauthorized: "You do not have permission to perform this action"
+    updated: "Post updated successfully"
+    deleted: "Post deleted successfully"
+    created: "Post created successfully"
+  errors:
+    forbidden: "You do not have permission to delete this post"
+  activerecord:
+    models:
+      user: "User"
+    attributes:
+      user:
+        email: "Email"
+        password: "Password"
+        password_confirmation: "Password Confirmation"
+        full_name: "Full Name"
+    errors:
+      format: "%{attribute} %{message}"
+      models:
+        user:
+          attributes:
+            email:
+              blank: "can't be blank"
+              taken: "has already been taken"
+              invalid: "is invalid"
+            full_name:
+              blank: "can't be blank"
+              too_long: "is too long (maximum is %{count} characters)"
+            password:
+              blank: "can't be blank"
+              too_short: "is too short (minimum is %{count} characters)"
+              confirmation: "doesn't match confirmation"
+            password_confirmation:
+              blank: "can't be blank"
+      errors:
+        token_invalid_or_absent: "Invalid or missing token"
+        user_not_found: "User not found"
+        access_denied: "Access denied"
+      errors:
+        no_permission_to_edit_post: "Você não tem permissão para editar este post."
+        no_permission_to_delete_post: "Você não tem permissão para excluir este post."
