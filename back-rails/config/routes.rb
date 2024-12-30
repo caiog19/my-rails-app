@@ -1,6 +1,6 @@
 Rails.application.routes.draw do
 
-  if Rails.env.development? || Rails.env.test? || Rails.env.production?
+  if Rails.env.development? || Rails.env.test? || ENV['INCLUDE_SWAGGER'] == 'true'
     mount Rswag::Ui::Engine => '/api-docs'
     mount Rswag::Api::Engine => '/api-docs'
   end

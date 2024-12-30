@@ -61,11 +61,18 @@ group :development, :test do
 
   # Test framework and Swagger documentation
   gem "rspec-rails", "~> 6.0"
-  gem "rswag-api"
-  gem "rswag-ui"
-  gem "rswag-specs"
+
   gem "dotenv-rails"
 end
+
+  gem 'rswag-api'
+  gem 'rswag-specs'
+
+group :development, :test, :swagger do
+
+  gem 'rswag-ui'
+end
+
 
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
