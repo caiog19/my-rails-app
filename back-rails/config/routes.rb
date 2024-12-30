@@ -1,8 +1,13 @@
 Rails.application.routes.draw do
 
-  if Rails.env.development? || Rails.env.test? || ENV['INCLUDE_SWAGGER'] == 'true'
-    mount Rswag::Ui::Engine => '/api-docs'
-    mount Rswag::Api::Engine => '/api-docs'
+  begin
+    require 'rswag/ui'
+    if Rails.env.development? || Rails.env.test? || ENV['INCLUDE_SWAGGER'] == 'true'
+      mount Rswag::Ui::Engine => '/api-docs'
+      mount Rswag::Api::Engine => '/api-docs'
+    end
+  rescue LoadError
+    # Do nothing if the gem isn't available
   end
   
   # Rotas para Posts
