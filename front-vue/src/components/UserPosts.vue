@@ -6,13 +6,7 @@
       <div class="tag-form card">
         <h3>Criar Nova Tag</h3>
         <form @submit.prevent="createTag">
-          <input
-            v-model="newTagName"
-            type="text"
-            placeholder="Nome da Tag"
-            required
-            class="input-field"
-          />
+          <input v-model="newTagName" type="text" placeholder="Nome da Tag" required class="input-field" />
           <button type="submit" class="btn btn-primary">Criar Tag</button>
         </form>
       </div>
@@ -43,12 +37,7 @@
             <button type="submit" class="btn btn-primary">
               {{ isEditingPost ? 'Salvar Alterações' : 'Publicar Post' }}
             </button>
-            <button
-              type="button"
-              v-if="isEditingPost"
-              @click="cancelEditPost"
-              class="btn btn-secondary"
-            >
+            <button type="button" v-if="isEditingPost" @click="cancelEditPost" class="btn btn-secondary">
               Cancelar
             </button>
           </div>
@@ -69,19 +58,13 @@
         <p v-else class="no-users">Não há usuários cadastrados.</p>
 
         <div v-if="users && users.length" class="pagination">
-          <button
-            @click="fetchUsers(currentPageUsers - 1)"
-            :disabled="currentPageUsers === 1"
-            class="btn btn-pagination"
-          >
+          <button @click="fetchUsers(currentPageUsers - 1)" :disabled="currentPageUsers === 1"
+            class="btn btn-pagination">
             Anterior
           </button>
           <span class="pagination-info">Página {{ currentPageUsers }} de {{ totalPagesUsers }}</span>
-          <button
-            @click="fetchUsers(currentPageUsers + 1)"
-            :disabled="currentPageUsers === totalPagesUsers"
-            class="btn btn-pagination"
-          >
+          <button @click="fetchUsers(currentPageUsers + 1)" :disabled="currentPageUsers === totalPagesUsers"
+            class="btn btn-pagination">
             Próximo
           </button>
         </div>
@@ -100,18 +83,11 @@
           </div>
 
           <div class="post-actions">
-            <button
-              v-if="isAdmin || post.user_id === currentUser.id"
-              @click="editPost(post)"
-              class="btn btn-edit"
-            >
+            <button v-if="isAdmin || post.user_id === currentUser.id" @click="editPost(post)" class="btn btn-edit">
               Editar
             </button>
-            <button
-              v-if="isAdmin || post.user_id === currentUser.id"
-              @click="deletePost(post.id)"
-              class="btn btn-delete"
-            >
+            <button v-if="isAdmin || post.user_id === currentUser.id" @click="deletePost(post.id)"
+              class="btn btn-delete">
               Excluir
             </button>
           </div>
@@ -120,24 +96,35 @@
       <p v-else class="no-posts">Você ainda não publicou nenhum post.</p>
 
       <div v-if="posts && posts.length" class="pagination">
-        <button
-          @click="fetchPosts(currentPagePosts - 1)"
-          :disabled="currentPagePosts === 1"
-          class="btn btn-pagination"
-        >
+        <button @click="fetchPosts(currentPagePosts - 1)" :disabled="currentPagePosts === 1" class="btn btn-pagination">
           Anterior
         </button>
         <span class="pagination-info">Página {{ currentPagePosts }} de {{ totalPagesPosts }}</span>
-        <button
-          @click="fetchPosts(currentPagePosts + 1)"
-          :disabled="currentPagePosts === totalPagesPosts"
-          class="btn btn-pagination"
-        >
+        <button @click="fetchPosts(currentPagePosts + 1)" :disabled="currentPagePosts === totalPagesPosts"
+          class="btn btn-pagination">
           Próximo
         </button>
       </div>
 
       <div v-if="loading" class="loading-indicator">Carregando...</div>
+
+      <div class="file-upload-form card">
+        <h3>Upload de Arquivo para Criar Posts ou Tags</h3>
+        <form @submit.prevent="uploadFile">
+          <div class="form-group">
+            <label for="file">Arquivo:</label>
+            <input type="file" id="file" ref="fileInput" @change="selectFile" required class="input-field" />
+          </div>
+          <div class="form-group">
+            <label for="resource_type">Tipo de Recurso:</label>
+            <select id="resource_type" v-model="resourceType" required class="input-field">
+              <option value="posts">Posts</option>
+              <option value="tags">Tags</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary">Enviar Arquivo</button>
+        </form>
+      </div>
 
       <div class="edit-profile-form card">
         <h3>Editar Cadastro</h3>
@@ -146,42 +133,14 @@
           Você é um admin, e não pode editar o seu cadastro
         </div>
 
-        <EditableField
-          ref="editableFullName"
-          label="Nome Completo"
-          id="fullName"
-          :value="profile.full_name"
-          field="full_name"
-          type="text"
-          required
-          :is-admin="isAdmin"
-          @save="handleSave"
-        />
+        <EditableField ref="editableFullName" label="Nome Completo" id="fullName" :value="profile.full_name"
+          field="full_name" type="text" required :is-admin="isAdmin" @save="handleSave" />
 
-        <EditableField
-          ref="editableEmail"
-          label="Email"
-          id="email"
-          :value="profile.email"
-          field="email"
-          type="email"
-          required
-          :is-admin="isAdmin"
-          @save="handleSave"
-        />
+        <EditableField ref="editableEmail" label="Email" id="email" :value="profile.email" field="email" type="email"
+          required :is-admin="isAdmin" @save="handleSave" />
 
-        <EditableField
-          ref="editablePassword"
-          label="Nova Senha"
-          id="password"
-          :value="passwordPlaceholder"
-          field="password"
-          type="password"
-          placeholder="Nova Senha"
-          required
-          :is-admin="isAdmin"
-          @save="handleSave"
-        />
+        <EditableField ref="editablePassword" label="Nova Senha" id="password" :value="passwordPlaceholder"
+          field="password" type="password" placeholder="Nova Senha" required :is-admin="isAdmin" @save="handleSave" />
       </div>
     </div>
   </div>
@@ -200,6 +159,8 @@ export default {
   },
   data() {
     return {
+      selectedFile: null,
+      resourceType: 'posts',
       posts: [],
       users: [],
       tags: [],
@@ -248,6 +209,38 @@ export default {
     }
   },
   methods: {
+    selectFile(event) {
+    this.selectedFile = event.target.files[0];
+  },
+
+  async uploadFile() {
+    if (!this.selectedFile) {
+      alert('Por favor, selecione um arquivo.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', this.selectedFile);
+    formData.append('resource_type', this.resourceType);
+
+    const token = localStorage.getItem('token');
+    try {
+      const response = await api.post('/file_uploads', formData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      alert(response.data.message);
+    } catch (error) {
+      console.error('Erro ao enviar arquivo:', error);
+      if (error.response && error.response.data.error) {
+        alert(error.response.data.error);
+      } else {
+        alert('Não foi possível enviar o arquivo.');
+      }
+    }
+  },
     async fetchCurrentUser() {
       const token = localStorage.getItem('token');
       try {
@@ -352,7 +345,7 @@ export default {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        
+
         alert('Perfil atualizado com sucesso!');
         await this.fetchCurrentUser();
         this.loadProfile();
