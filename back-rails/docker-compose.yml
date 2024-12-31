@@ -1,30 +1,37 @@
-version: '3.8'
-
+version: "3.8"
 services:
-  db:
-    image: postgres:14
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 123
-      POSTGRES_DB: my_app_test
-    ports:
-      - "5433:5433"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
   app:
     build:
       context: .
-    environment:
-      DB_HOST: db
-      DB_USERNAME: postgres
-      DB_PASSWORD: 123
-      DB_NAME: my_app_test
-    depends_on:
-      - db
-    ports:
-      - "3000:3000"
+      dockerfile: Dockerfile
     volumes:
       - .:/rails
-volumes:
-  pgdata:
+    environment:
+      RAILS_ENV: production
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "3000:3000"
+    depends_on:
+      - redis
+    command: >
+      sh -c "bin/rails db:migrate && bin/rails server -b 0.0.0.0"
+
+  sidekiq:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/rails
+    environment:
+      RAILS_ENV: production
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - redis
+    command: >
+      bundle exec sidekiq -e production -C config/sidekiq.yml
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
