@@ -3,7 +3,7 @@
     <h1>Posts Recentes</h1>
 
     <div class="search-container">
-      <input v-model="searchQuery"  type="text" placeholder="Busque por título, conteúdo ou tag..."
+      <input v-model="searchQuery" type="text" placeholder="Busque por título, conteúdo ou tag..."
         class="search-input" />
     </div>
 
@@ -47,9 +47,19 @@
           <h4>Comentários</h4>
           <ul class="comments-list" v-if="post.comments && post.comments.length">
             <li v-for="comment in post.comments" :key="comment.id">
-              <p><strong>{{ comment.author_name }}</strong>: {{ comment.content }}</p>
+              <p>
+                <strong>{{ comment.author_name }}</strong>:
+                <span v-if="comment.hidden && isAdmin">[Comentário oculto]</span>
+                <span v-else>{{ comment.content }}</span>
+              </p>
+              <div v-if="isAdmin">
+                <button v-if="!comment.hidden" @click="hideComment(post.id, comment.id)"
+                  class="hide-button">Ocultar</button>
+                <button v-else @click="revealComment(post.id, comment.id)" class="reveal-button">Revelar</button>
+              </div>
             </li>
           </ul>
+
           <p v-else>Não há comentários ainda.</p>
 
           <div class="container-admin">
@@ -85,7 +95,7 @@
 <script>
 import api from '../services/api';
 import '../styles/BlogHome.css';
-import _ from 'lodash'; 
+import _ from 'lodash';
 
 export default {
   name: 'BlogHome',
@@ -109,6 +119,53 @@ export default {
     await this.fetchPosts(1);
   },
   methods: {
+
+    async hideComment(postId, commentId) {
+      if (!confirm('Tem certeza de que deseja ocultar este comentário?')) return;
+      try {
+        const token = localStorage.getItem('token');
+        await api.patch(`/posts/${postId}/comments/${commentId}/hide`, {}, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        // Atualizar o comentário localmente
+        const postIndex = this.posts.findIndex(post => post.id === postId);
+        if (postIndex !== -1) {
+          const commentIndex = this.posts[postIndex].comments.findIndex(c => c.id === commentId);
+          if (commentIndex !== -1) {
+            this.posts[postIndex].comments[commentIndex].hidden = true;
+            this.posts[postIndex].comments[commentIndex].content = 'Este comentário está oculto.';
+
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao ocultar comentário:', error);
+        alert('Não foi possível ocultar o comentário.');
+      }
+    },
+
+    async revealComment(postId, commentId) {
+      if (!confirm('Tem certeza de que deseja revelar este comentário?')) return;
+      try {
+        const token = localStorage.getItem('token');
+        await api.patch(`/posts/${postId}/comments/${commentId}/reveal`, {}, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        // Atualizar o comentário localmente
+        const postIndex = this.posts.findIndex(post => post.id === postId);
+        if (postIndex !== -1) {
+          const commentIndex = this.posts[postIndex].comments.findIndex(c => c.id === commentId);
+          if (commentIndex !== -1) {
+            this.posts[postIndex].comments[commentIndex].hidden = false;
+            await this.fetchPosts(this.currentPage);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao revelar comentário:', error);
+        alert('Não foi possível revelar o comentário.');
+      }
+    },
+
+
     async fetchCurrentUser() {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -133,36 +190,27 @@ export default {
     },
 
     async fetchPosts(page, searchQuery = '') {
-      this.loading = true;
-      try {
-        const response = await api.get('/posts', { params: { page, query: searchQuery || this.searchQuery } });
-        const postsWithComments = await Promise.all(
-          response.data.posts.map(async (post) => {
-            const comments = await this.fetchComments(post.id);
-            return { ...post, comments };
-          })
-        );
-        this.posts = postsWithComments;
-        this.currentPage = response.data.meta.current_page;
-        this.totalPages = response.data.meta.total_pages;
-      } catch (error) {
-        console.error('Erro ao buscar posts:', error);
-      } finally {
-        this.loading = false;
-      }
-    },
+    this.loading = true;
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-    async fetchComments(postId) {
-      try {
-        const token = localStorage.getItem('token');
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        const response = await api.get(`/posts/${postId}/comments`, { headers });
-        return response.data;
-      } catch (error) {
-        console.error(`Erro ao buscar comentários para o post ${postId}:`, error);
-        return [];
-      }
-    },
+      const response = await api.get('/posts', { 
+        params: { page, query: searchQuery || this.searchQuery },
+        headers 
+      });
+      this.posts = response.data.posts;
+      this.currentPage = response.data.meta.current_page;
+      this.totalPages = response.data.meta.total_pages;
+    } catch (error) {
+      console.error('Erro ao buscar posts:', error);
+    } finally {
+      this.loading = false;
+    }
+  },
+
+
+
     async addComment(postId) {
       const content = this.newComments[postId];
       if (!content || !content.trim()) {
@@ -242,7 +290,7 @@ export default {
     },
     debounceSearch: _.debounce(function (query) {
       this.fetchPosts(1, query);
-    }, 300), 
+    }, 300),
   },
   watch: {
     searchQuery: {
@@ -254,4 +302,3 @@ export default {
   },
 };
 </script>
-

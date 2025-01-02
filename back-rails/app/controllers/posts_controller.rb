@@ -1,26 +1,64 @@
 class PostsController < ApplicationController
+  before_action :authenticate_optional, only: [:index]
   before_action :authorize_request, except: [:index]
   before_action :set_post, only: [:update, :destroy]
+  
+  def authenticate_optional
+    if request.headers['Authorization'].present?
+      authorize_request
+    else
+      @current_user = nil
+    end
+  end
 
   # Exibir todos os posts (Home)
   def index
     if params[:query].present?
       query = params[:query]
       @posts = Post.joins(:user)
-                   .includes(:tags)
+                   .includes(:tags, comments: :user) 
                    .select('posts.*, users.full_name as user_full_name')
                    .where("posts.title ILIKE :query OR posts.content ILIKE :query OR tags.name ILIKE :query", query: "%#{query}%")
                    .references(:tags)
                    .order(Arel.sql("similarity(posts.title, '#{query}') DESC"))
     else
       @posts = Post.joins(:user)
-                   .includes(:tags)
+                   .includes(:tags, comments: :user) 
                    .select('posts.*, users.full_name as user_full_name')
                    .order(created_at: :desc)
     end
     @posts = @posts.page(params[:page]).per(3)
+
+    # Processa os comentários com base na autorização
+    processed_posts = @posts.map do |post|
+      post_hash = post.as_json(include: { tags: { only: [:id, :name] } })
+      
+      # Processa cada comentário
+      comments = post.comments.map do |comment|
+        if comment.hidden && !(@current_user&.admin?)
+          {
+            id: comment.id,
+            content: "Este comentário está oculto.",
+            author_name: comment.author_name,
+            created_at: comment.created_at,
+            hidden: comment.hidden
+          }
+        else
+          {
+            id: comment.id,
+            content: comment.content,
+            author_name: comment.author_name,
+            created_at: comment.created_at,
+            hidden: comment.hidden
+          }
+        end
+      end
+      post_hash['comments'] = comments
+      post_hash
+    end
+
     render json: {
-      posts: @posts.as_json(include: { tags: { only: [:id, :name] } }),
+      posts: processed_posts,
       meta: {
         current_page: @posts.current_page,
         total_pages: @posts.total_pages,
@@ -31,10 +69,21 @@ class PostsController < ApplicationController
   
   # Meus Posts (do usuário autenticado)
   def meus_posts
-    @posts = Post.where(user_id: @current_user.id).includes(:tags).order(created_at: :desc)
+    @posts = Post.where(user_id: @current_user.id)
+                 .includes(:tags, comments: :user) 
+                 .order(created_at: :desc)
     @posts = @posts.page(params[:page]).per(3)
     render json: {
-      posts: @posts.as_json(include: :tags),
+      posts: @posts.as_json(
+        include: {
+          tags: { only: [:id, :name] },
+          comments: { 
+            include: { user: { only: [:full_name] } },
+            methods: :author_name,
+            only: [:id, :content, :created_at]
+          }
+        }
+      ),
       meta: {
         current_page: @posts.current_page,
         total_pages: @posts.total_pages,
