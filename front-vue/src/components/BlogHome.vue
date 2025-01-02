@@ -47,7 +47,16 @@
           <h4>Comentários</h4>
           <ul class="comments-list" v-if="post.comments && post.comments.length">
             <li v-for="comment in post.comments" :key="comment.id">
-              <p><strong>{{ comment.author_name }}</strong>: {{ comment.content }}</p>
+              <p>
+                <strong>{{ comment.author_name }}</strong>:
+                <span v-if="comment.hidden && isAdmin">[Comentário oculto]</span>
+                <span v-else>{{ comment.content }}</span>
+              </p>
+              <div v-if="isAdmin">
+                <button v-if="!comment.hidden" @click="hideComment(post.id, comment.id)"
+                  class="hide-button">Ocultar</button>
+                <button v-else @click="revealComment(post.id, comment.id)" class="reveal-button">Revelar</button>
+              </div>
             </li>
           </ul>
 
@@ -110,6 +119,53 @@ export default {
     await this.fetchPosts(1);
   },
   methods: {
+
+    async hideComment(postId, commentId) {
+      if (!confirm('Tem certeza de que deseja ocultar este comentário?')) return;
+      try {
+        const token = localStorage.getItem('token');
+        await api.patch(`/posts/${postId}/comments/${commentId}/hide`, {}, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        // Atualizar o comentário localmente
+        const postIndex = this.posts.findIndex(post => post.id === postId);
+        if (postIndex !== -1) {
+          const commentIndex = this.posts[postIndex].comments.findIndex(c => c.id === commentId);
+          if (commentIndex !== -1) {
+            this.posts[postIndex].comments[commentIndex].hidden = true;
+            this.posts[postIndex].comments[commentIndex].content = 'Este comentário está oculto.';
+
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao ocultar comentário:', error);
+        alert('Não foi possível ocultar o comentário.');
+      }
+    },
+
+    async revealComment(postId, commentId) {
+      if (!confirm('Tem certeza de que deseja revelar este comentário?')) return;
+      try {
+        const token = localStorage.getItem('token');
+        await api.patch(`/posts/${postId}/comments/${commentId}/reveal`, {}, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        // Atualizar o comentário localmente
+        const postIndex = this.posts.findIndex(post => post.id === postId);
+        if (postIndex !== -1) {
+          const commentIndex = this.posts[postIndex].comments.findIndex(c => c.id === commentId);
+          if (commentIndex !== -1) {
+            this.posts[postIndex].comments[commentIndex].hidden = false;
+            await this.fetchPosts(this.currentPage);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao revelar comentário:', error);
+        alert('Não foi possível revelar o comentário.');
+      }
+    },
+
+
     async fetchCurrentUser() {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -134,18 +190,24 @@ export default {
     },
 
     async fetchPosts(page, searchQuery = '') {
-      this.loading = true;
-      try {
-        const response = await api.get('/posts', { params: { page, query: searchQuery || this.searchQuery } });
-        this.posts = response.data.posts;
-        this.currentPage = response.data.meta.current_page;
-        this.totalPages = response.data.meta.total_pages;
-      } catch (error) {
-        console.error('Erro ao buscar posts:', error);
-      } finally {
-        this.loading = false;
-      }
-    },
+    this.loading = true;
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const response = await api.get('/posts', { 
+        params: { page, query: searchQuery || this.searchQuery },
+        headers 
+      });
+      this.posts = response.data.posts;
+      this.currentPage = response.data.meta.current_page;
+      this.totalPages = response.data.meta.total_pages;
+    } catch (error) {
+      console.error('Erro ao buscar posts:', error);
+    } finally {
+      this.loading = false;
+    }
+  },
 
 
 
