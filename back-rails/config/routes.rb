@@ -12,7 +12,12 @@ Rails.application.routes.draw do
   
   # Rotas para Posts
   resources :posts, only: [:index, :create, :update, :destroy] do
-    resources :comments, only: [:index, :create]
+    resources :comments, only: [:index, :create, :update, :destroy] do
+      member do
+        patch 'hide'
+        patch 'reveal'
+      end
+    end
     resources :tags, only: [:index]
   end
 

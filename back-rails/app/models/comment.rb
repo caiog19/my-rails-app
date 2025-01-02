@@ -7,4 +7,8 @@ class Comment < ApplicationRecord
   def author_name
     user ? user.full_name : "Anônimo"
   end
+
+  def toggle_hidden!
+    update(hidden: !hidden)
+  end
 end
