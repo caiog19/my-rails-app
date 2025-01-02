@@ -7,20 +7,29 @@ class PostsController < ApplicationController
     if params[:query].present?
       query = params[:query]
       @posts = Post.joins(:user)
-                   .includes(:tags)
+                   .includes(:tags, comments: :user) 
                    .select('posts.*, users.full_name as user_full_name')
                    .where("posts.title ILIKE :query OR posts.content ILIKE :query OR tags.name ILIKE :query", query: "%#{query}%")
                    .references(:tags)
                    .order(Arel.sql("similarity(posts.title, '#{query}') DESC"))
     else
       @posts = Post.joins(:user)
-                   .includes(:tags)
+                   .includes(:tags, comments: :user) 
                    .select('posts.*, users.full_name as user_full_name')
                    .order(created_at: :desc)
     end
     @posts = @posts.page(params[:page]).per(3)
     render json: {
-      posts: @posts.as_json(include: { tags: { only: [:id, :name] } }),
+      posts: @posts.as_json(
+        include: {
+          tags: { only: [:id, :name] },
+          comments: { 
+            include: { user: { only: [:full_name] } },
+            methods: :author_name,
+            only: [:id, :content, :created_at]
+          }
+        }
+      ),
       meta: {
         current_page: @posts.current_page,
         total_pages: @posts.total_pages,
@@ -31,10 +40,21 @@ class PostsController < ApplicationController
   
   # Meus Posts (do usuário autenticado)
   def meus_posts
-    @posts = Post.where(user_id: @current_user.id).includes(:tags).order(created_at: :desc)
+    @posts = Post.where(user_id: @current_user.id)
+                 .includes(:tags, comments: :user) 
+                 .order(created_at: :desc)
     @posts = @posts.page(params[:page]).per(3)
     render json: {
-      posts: @posts.as_json(include: :tags),
+      posts: @posts.as_json(
+        include: {
+          tags: { only: [:id, :name] },
+          comments: { 
+            include: { user: { only: [:full_name] } },
+            methods: :author_name,
+            only: [:id, :content, :created_at]
+          }
+        }
+      ),
       meta: {
         current_page: @posts.current_page,
         total_pages: @posts.total_pages,
