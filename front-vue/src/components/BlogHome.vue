@@ -3,7 +3,7 @@
     <h1>Posts Recentes</h1>
 
     <div class="search-container">
-      <input v-model="searchQuery"  type="text" placeholder="Busque por título, conteúdo ou tag..."
+      <input v-model="searchQuery" type="text" placeholder="Busque por título, conteúdo ou tag..."
         class="search-input" />
     </div>
 
@@ -50,6 +50,7 @@
               <p><strong>{{ comment.author_name }}</strong>: {{ comment.content }}</p>
             </li>
           </ul>
+
           <p v-else>Não há comentários ainda.</p>
 
           <div class="container-admin">
@@ -85,7 +86,7 @@
 <script>
 import api from '../services/api';
 import '../styles/BlogHome.css';
-import _ from 'lodash'; 
+import _ from 'lodash';
 
 export default {
   name: 'BlogHome',
@@ -136,13 +137,7 @@ export default {
       this.loading = true;
       try {
         const response = await api.get('/posts', { params: { page, query: searchQuery || this.searchQuery } });
-        const postsWithComments = await Promise.all(
-          response.data.posts.map(async (post) => {
-            const comments = await this.fetchComments(post.id);
-            return { ...post, comments };
-          })
-        );
-        this.posts = postsWithComments;
+        this.posts = response.data.posts;
         this.currentPage = response.data.meta.current_page;
         this.totalPages = response.data.meta.total_pages;
       } catch (error) {
@@ -152,17 +147,8 @@ export default {
       }
     },
 
-    async fetchComments(postId) {
-      try {
-        const token = localStorage.getItem('token');
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        const response = await api.get(`/posts/${postId}/comments`, { headers });
-        return response.data;
-      } catch (error) {
-        console.error(`Erro ao buscar comentários para o post ${postId}:`, error);
-        return [];
-      }
-    },
+
+
     async addComment(postId) {
       const content = this.newComments[postId];
       if (!content || !content.trim()) {
@@ -242,7 +228,7 @@ export default {
     },
     debounceSearch: _.debounce(function (query) {
       this.fetchPosts(1, query);
-    }, 300), 
+    }, 300),
   },
   watch: {
     searchQuery: {
@@ -254,4 +240,3 @@ export default {
   },
 };
 </script>
-
