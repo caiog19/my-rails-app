@@ -34,6 +34,7 @@
 ### Comentários
 - Criação, edição e exclusão de comentários.
 - Administração de comentários (ocultar/revelar).
+- Sistema de votação: os usuários podem dar "upvotes" ou "downvotes" para marcar comentários como úteis ou não.
 
 ### Tags
 - Gerenciamento de tags associadas aos posts.
