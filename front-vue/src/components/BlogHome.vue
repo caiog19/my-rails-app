@@ -52,6 +52,23 @@
                 <span v-if="comment.hidden && isAdmin">[Comentário oculto]</span>
                 <span v-else>{{ comment.content }}</span>
               </p>
+
+              <div class="votes">
+                <button @click="upvoteComment(post.id, comment)"
+                  :class="{ 'active-vote': comment.current_user_vote === 'upvote' }">
+                  👍
+                </button>
+                <span>{{ comment.upvotes }}</span>
+                <button @click="downvoteComment(post.id, comment)"
+                  :class="{ 'active-vote': comment.current_user_vote === 'downvote' }">
+                  👎
+                </button>
+                <span>{{ comment.downvotes }}</span>
+              </div>
+
+
+
+
               <div v-if="isAdmin">
                 <button v-if="!comment.hidden" @click="hideComment(post.id, comment.id)"
                   class="hide-button">Ocultar</button>
@@ -119,6 +136,62 @@ export default {
     await this.fetchPosts(1);
   },
   methods: {
+    async upvoteComment(postId, comment) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await api.patch(`/posts/${postId}/comments/${comment.id}/upvote`, {}, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // Atualiza o comentário no frontend com os novos contadores e estado do voto
+        const postIndex = this.posts.findIndex(post => post.id === postId);
+        if (postIndex !== -1) {
+          const commentIndex = this.posts[postIndex].comments.findIndex(c => c.id === comment.id);
+          if (commentIndex !== -1) {
+            this.posts[postIndex].comments[commentIndex].upvotes = response.data.upvotes;
+            this.posts[postIndex].comments[commentIndex].downvotes = response.data.downvotes;
+            this.posts[postIndex].comments[commentIndex].current_user_vote = response.data.message.includes('upvote') ? 'upvote' :
+              (response.data.message.includes('remove') ? null : this.posts[postIndex].comments[commentIndex].current_user_vote);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao registrar/upvote:', error);
+        if (error.response?.data?.error) {
+          alert(error.response.data.error);
+        } else {
+          alert('Não foi possível registrar o voto.');
+        }
+      }
+    },
+
+
+    async downvoteComment(postId, comment) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await api.patch(`/posts/${postId}/comments/${comment.id}/downvote`, {}, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // Atualiza o comentário no frontend com os novos contadores e estado do voto
+        const postIndex = this.posts.findIndex(post => post.id === postId);
+        if (postIndex !== -1) {
+          const commentIndex = this.posts[postIndex].comments.findIndex(c => c.id === comment.id);
+          if (commentIndex !== -1) {
+            this.posts[postIndex].comments[commentIndex].upvotes = response.data.upvotes;
+            this.posts[postIndex].comments[commentIndex].downvotes = response.data.downvotes;
+            this.posts[postIndex].comments[commentIndex].current_user_vote = response.data.message.includes('downvote') ? 'downvote' :
+              (response.data.message.includes('remove') ? null : this.posts[postIndex].comments[commentIndex].current_user_vote);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao registrar downvote:', error);
+        if (error.response?.data?.error) {
+          alert(error.response.data.error);
+        } else {
+          alert('Não foi possível registrar o voto.');
+        }
+      }
+    },
 
     async hideComment(postId, commentId) {
       if (!confirm('Tem certeza de que deseja ocultar este comentário?')) return;
@@ -190,24 +263,24 @@ export default {
     },
 
     async fetchPosts(page, searchQuery = '') {
-    this.loading = true;
-    try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      this.loading = true;
+      try {
+        const token = localStorage.getItem('token');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      const response = await api.get('/posts', { 
-        params: { page, query: searchQuery || this.searchQuery },
-        headers 
-      });
-      this.posts = response.data.posts;
-      this.currentPage = response.data.meta.current_page;
-      this.totalPages = response.data.meta.total_pages;
-    } catch (error) {
-      console.error('Erro ao buscar posts:', error);
-    } finally {
-      this.loading = false;
-    }
-  },
+        const response = await api.get('/posts', {
+          params: { page, query: searchQuery || this.searchQuery },
+          headers
+        });
+        this.posts = response.data.posts;
+        this.currentPage = response.data.meta.current_page;
+        this.totalPages = response.data.meta.total_pages;
+      } catch (error) {
+        console.error('Erro ao buscar posts:', error);
+      } finally {
+        this.loading = false;
+      }
+    },
 
 
 

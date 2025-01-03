@@ -311,4 +311,7 @@ body {
     border-radius: 4px;
     font-size: 16px;
   }
-  
+
+.active-vote {
+  color: rgb(2, 78, 243); 
+}

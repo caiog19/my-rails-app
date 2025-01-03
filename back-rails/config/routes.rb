@@ -16,6 +16,8 @@ Rails.application.routes.draw do
       member do
         patch 'hide'
         patch 'reveal'
+        patch 'upvote'
+        patch 'downvote'
       end
     end
     resources :tags, only: [:index]
