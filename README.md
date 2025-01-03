@@ -150,7 +150,7 @@ Acesse a documentação Swagger em:
 
 Abaixo está o diagrama do banco de dados utilizado no projeto:
 
-![Diagrama do Banco de Dados](./front-vue/src/assets/diagrama.png)
+![Diagrama do Banco de Dados](./front-vue/src/assets/diagrama_att.png)
 
 ## Testes Realizados
 
