@@ -16,14 +16,14 @@ class PostsController < ApplicationController
     if params[:query].present?
       query = params[:query]
       @posts = Post.joins(:user)
-                   .includes(:tags, comments: :user) 
+                   .includes(:tags, comments: [:user, :votes]) 
                    .select('posts.*, users.full_name as user_full_name')
                    .where("posts.title ILIKE :query OR posts.content ILIKE :query OR tags.name ILIKE :query", query: "%#{query}%")
                    .references(:tags)
                    .order(Arel.sql("similarity(posts.title, '#{query}') DESC"))
     else
       @posts = Post.joins(:user)
-                   .includes(:tags, comments: :user) 
+                   .includes(:tags, comments: [:user, :votes]) 
                    .select('posts.*, users.full_name as user_full_name')
                    .order(created_at: :desc)
     end
@@ -41,7 +41,10 @@ class PostsController < ApplicationController
             content: "Este comentário está oculto.",
             author_name: comment.author_name,
             created_at: comment.created_at,
-            hidden: comment.hidden
+            hidden: comment.hidden,
+            upvotes: comment.upvotes,
+            downvotes: comment.downvotes,
+            current_user_vote: @current_user ? comment.votes.find_by(user: @current_user)&.vote_type : nil
           }
         else
           {
@@ -49,7 +52,10 @@ class PostsController < ApplicationController
             content: comment.content,
             author_name: comment.author_name,
             created_at: comment.created_at,
-            hidden: comment.hidden
+            hidden: comment.hidden,
+            upvotes: comment.upvotes,
+            downvotes: comment.downvotes,
+            current_user_vote: @current_user ? comment.votes.find_by(user: @current_user)&.vote_type : nil
           }
         end
       end
